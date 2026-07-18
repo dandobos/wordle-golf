@@ -87,6 +87,10 @@
   .bubble .yes{background:#3fae35;color:#fff;box-shadow:0 3px 0 #2b6e23}
   .bubble .no{background:#eceada;color:#5a6152;box-shadow:0 3px 0 #c9c6b2}
   .gallerywrap{position:relative;width:100%}
+  .mute{position:absolute;top:8px;right:8px;z-index:25;border:none;cursor:pointer;
+    background:#fff;border-radius:999px;width:34px;height:34px;font-size:1rem;
+    box-shadow:0 2px 0 rgba(0,0,0,.18);display:grid;place-items:center}
+  .mute:active{transform:translateY(2px);box-shadow:none}
 
   /* grid */
   .grid{display:grid;grid-template-rows:repeat(6,1fr);gap:6px}
@@ -184,6 +188,7 @@
     </div>
     <div class="gallerywrap">
       <div class="bubble" id="bubble"></div>
+      <button class="mute" id="btn-mute" aria-label="Toggle sound">🔊</button>
       <div class="gallery">
         <div class="gal-row" id="gal"></div>
         <div class="gal-hint">tap a critter for a hint · +1 stroke</div>
@@ -465,12 +470,44 @@ const BANK=[
 
 /* ============ QUIPS ============ */
 const Q={
-  none:["Oof! Total whiff!","That putt rolled right past everything!","Hmm… none of those letters, friend!","The windmill laughed at that one. Sorry."],
-  some:["Ooh, getting closer!","Nice putt! Keep rolling!","I can feel it… you're on the green!","Not bad, not bad at all!"],
-  hot:["SO CLOSE! I can't look!!","It's RIGHT THERE!","*gasp* *gasp* *gasp*","My whiskers are tingling!!"],
+  none:["Oof! Total whiff!","That putt rolled right past everything!","Hmm… none of those letters, friend!","The windmill laughed at that one. Sorry.","My grandma putts better than that!","Swing and a miss!"],
+  some:["Ooh, getting closer!","Nice putt! Keep rolling!","I can feel it… you're on the green!","Not bad, not bad at all!","Ooh ooh, warmer, WARMER!","That one had some style!"],
+  hot:["SO CLOSE! I can't look!!","It's RIGHT THERE!","*gasp* *gasp* *gasp*","My whiskers are tingling!!","One more putt, ONE MORE PUTT!","I'm sweating and I don't even sweat!"],
+  win:["YESSS! What a putt!!","IN THE HOLE!!","The crowd goes WILD!","Champion stuff, that was!","I never doubted you. Okay, maybe once."],
   invalid:["That's not a word I know!","Hmm, my dictionary says nope!","Try a real word, champ!"],
   fail:["Aw, lost ball… we'll get the next one!","Splash! Right into the pond.","Even the pros have bad holes!"]
 };
+
+/* ============ SOUND ============ */
+let AC=null,muted=localStorage.getItem('wg-mute')==='1';
+function ac(){AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+  if(AC.state==='suspended')AC.resume();return AC;}
+function tone(f,dt,dur,o={}){
+  if(muted)return;
+  try{
+    const a=ac(),t=a.currentTime+dt,osc=a.createOscillator(),g=a.createGain();
+    osc.type=o.type||'sine';osc.frequency.setValueAtTime(f,t);
+    if(o.slide)osc.frequency.exponentialRampToValueAtTime(Math.max(40,f+o.slide),t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(o.vol||.15,t+.015);
+    g.gain.exponentialRampToValueAtTime(.001,t+dur);
+    osc.connect(g).connect(a.destination);osc.start(t);osc.stop(t+dur+.05);
+  }catch(e){}
+}
+const SFX={
+  tap:()=>tone(650,0,.05,{type:'triangle',vol:.05}),
+  invalid:()=>{tone(170,0,.16,{type:'sawtooth',vol:.1});tone(150,.13,.2,{type:'sawtooth',vol:.1});},
+  none:()=>{tone(240,0,.16,{slide:-90,vol:.14});tone(180,.18,.26,{slide:-70,vol:.14});},
+  some:()=>{tone(440,0,.09,{vol:.14});tone(554,.09,.13,{vol:.14});},
+  hot:()=>{tone(523,0,.09,{vol:.16});tone(659,.09,.09,{vol:.16});tone(784,.18,.17,{vol:.16});},
+  win:()=>{[523,659,784,1047].forEach((f,i)=>tone(f,i*.12,i===3?.4:.12,{vol:.18}));
+           [523,659,784,1047].forEach((f,i)=>tone(f/2,i*.12,i===3?.4:.12,{type:'triangle',vol:.1}));},
+  fail:()=>{tone(311,0,.28,{slide:-30,type:'triangle',vol:.14});tone(294,.3,.28,{slide:-30,type:'triangle',vol:.14});
+            tone(262,.6,.55,{slide:-90,type:'triangle',vol:.14});},
+  hint:()=>{tone(880,0,.06,{type:'triangle',vol:.12});tone(1150,.06,.09,{type:'triangle',vol:.12});},
+  chirp:(voice)=>{const n=2+Math.floor(Math.random()*2);
+    for(let i=0;i<n;i++)tone(voice*(1+Math.random()*.35),i*.08,.06,{type:'square',vol:.055});}
+};
+function setMuteIcon(){const b=$('btn-mute');if(b)b.textContent=muted?'🔇':'🔊';}
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a};
 
@@ -513,7 +550,8 @@ function startTurn(){
   renderHud();renderGallery();renderGrid();renderKb();
   hideBubble();
   show('scr-play');
-  setTimeout(()=>say(pick([`Fore! The gallery is watching, ${G.players[G.p]}!`,`We know the word… do you? Hee hee!`,`Good luck! Tap one of us if you get stuck. For a price…`]),3200),350);
+  setTimeout(()=>comment(Math.floor(Math.random()*3),
+    pick([`Fore! The gallery is watching, ${G.players[G.p]}!`,`We know the word… do you? Hee hee!`,`Good luck! Tap one of us if you get stuck. For a price…`]),3200),350);
 }
 function renderHud(){
   const s=C.rows.length+C.hintsUsed;
@@ -546,8 +584,8 @@ document.addEventListener('keydown',e=>{
 function keyIn(k){
   if(C.done)return;
   if(k==='↵'){submit();return;}
-  if(k==='⌫'){C.cur=C.cur.slice(0,-1);drawCur();return;}
-  if(C.cur.length<5){C.cur+=k;drawCur();}
+  if(k==='⌫'){C.cur=C.cur.slice(0,-1);drawCur();SFX.tap();return;}
+  if(C.cur.length<5){C.cur+=k;drawCur();SFX.tap();}
 }
 function drawCur(){
   const row=$('grid').querySelector(`[data-r="${C.rows.length}"]`);
@@ -565,7 +603,7 @@ function submit(){
   const row=$('grid').querySelector(`[data-r="${C.rows.length}"]`);
   if(!WORDS.has(C.cur)){
     row.classList.add('shake');setTimeout(()=>row.classList.remove('shake'),450);
-    say(pick(Q.invalid),1800);return;
+    SFX.invalid();comment(Math.floor(Math.random()*3),pick(Q.invalid),1800);return;
   }
   const g=C.cur,ans=C.entry.w,res=score(g,ans);
   [...row.children].forEach((t,i)=>setTimeout(()=>{t.classList.remove('filled');t.classList.add(res[i]);},i*120));
@@ -582,7 +620,8 @@ function submit(){
   if(g===ans){finishTurn(true);return;}
   if(C.rows.length===6){finishTurn(false);return;}
   react(greens>=3?'gasp':null);
-  say(pick(hits===0?Q.none:greens>=3?Q.hot:Q.some),2200);
+  (hits===0?SFX.none:greens>=3?SFX.hot:SFX.some)();
+  setTimeout(()=>comment(Math.floor(Math.random()*3),pick(hits===0?Q.none:greens>=3?Q.hot:Q.some),2600),380);
 }
 function react(state){
   $('gal').querySelectorAll('.critter').forEach(el=>{
@@ -609,7 +648,8 @@ function finishTurn(solved){
   const strokes=(solved?C.rows.length:8)+C.hintsUsed;
   G.results[G.hole][G.p]={strokes,solved,hints:C.hintsUsed};
   react(solved?'cheer':'sad');
-  if(!solved)say(pick(Q.fail),2600);
+  if(solved){SFX.win();comment(Math.floor(Math.random()*3),pick(Q.win),2400);}
+  else{SFX.fail();comment(Math.floor(Math.random()*3),pick(Q.fail),2600);}
   setTimeout(()=>{
     $('res-term').textContent=termFor(strokes,C.entry.par,solved);
     $('res-detail').textContent=`${strokes} stroke${strokes===1?'':'s'} on a par ${C.entry.par}`+
@@ -632,16 +672,23 @@ function say(txt,ms){
   if(ms)bubbleTimer=setTimeout(hideBubble,ms);
 }
 function hideBubble(){$('bubble').classList.remove('show');}
+const VOICE=[300,440,580];
+function comment(i,txt,ms=2600){
+  const ch=C.entry.chars[i];
+  say(`<b>${ch.n}:</b> "${txt}"`,ms);
+  SFX.chirp(VOICE[i]||400);
+}
 function hintTap(el){
   if(C.done)return;
   const i=+el.dataset.i,ch=C.entry.chars[i],hint=C.entry.hints[i];
-  if(el.classList.contains('used')){say(`<b>${ch.n}:</b> "Like I said… ${hint}"`,3500);return;}
+  if(el.classList.contains('used')){SFX.chirp(VOICE[i]);say(`<b>${ch.n}:</b> "Like I said… ${hint}"`,3500);return;}
   const b=$('bubble');
   b.innerHTML=`<b>${ch.n}:</b> "Psst… want my hint? It'll cost you <b>+1 stroke</b>!"<div class="brow">
     <button class="yes">Hint please!</button><button class="no">No way</button></div>`;
   b.classList.add('show');clearTimeout(bubbleTimer);
   b.querySelector('.yes').addEventListener('click',()=>{
     C.hintsUsed++;el.classList.add('used');renderHud();
+    SFX.hint();SFX.chirp(VOICE[i]);
     say(`<b>${ch.n}:</b> "${hint}"`,6000);
   });
   b.querySelector('.no').addEventListener('click',hideBubble);
@@ -699,6 +746,12 @@ function finalScreen(){
 }
 $('btn-again').addEventListener('click',()=>{G=buildCourse(G.players);passScreen();});
 $('btn-new').addEventListener('click',()=>{show('scr-setup');});
+$('btn-mute').addEventListener('click',e=>{
+  e.stopPropagation();
+  muted=!muted;localStorage.setItem('wg-mute',muted?'1':'0');setMuteIcon();
+  if(!muted)SFX.some();
+});
+setMuteIcon();
 </script>
 </body>
 </html>
