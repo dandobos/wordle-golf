@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Wordle Golf ⛳ Windmill Lane</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛳</text></svg>">
+<script src="words.js"></script>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{margin:0;background:linear-gradient(#aee3f5,#8fd7ef) fixed;
+    font-family:ui-rounded,"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",sans-serif;
+    color:#23421c;display:flex;justify-content:center}
+  .app{width:100%;max-width:480px;min-height:100%;display:flex;flex-direction:column;padding:14px 12px 18px;position:relative}
+
+  .screen{display:none;flex:1;flex-direction:column;align-items:center;gap:16px}
+  .screen.active{display:flex}
+
+  h1.logo{margin:10px 0 0;font-size:2.3rem;color:#fff;-webkit-text-stroke:2px #2b6e23;
+    text-shadow:0 4px 0 #2b6e23;letter-spacing:.02em;text-align:center;text-wrap:balance}
+  .sub{background:#e2574c;color:#fff;border-radius:999px;padding:5px 16px;font-size:.78rem;
+    font-weight:800;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 3px 0 #a33830}
+
+  .card{background:#fff;border-radius:18px;box-shadow:0 5px 0 rgba(0,0,0,.14);padding:18px;width:100%}
+  .pill{background:#fff;border-radius:999px;padding:6px 18px;font-weight:800;color:#2b6e23;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+  .cta{border:none;cursor:pointer;background:#e2574c;color:#fff;border-radius:999px;padding:14px 34px;
+    font:800 1.05rem ui-rounded,"Arial Rounded MT Bold","Trebuchet MS",sans-serif;box-shadow:0 5px 0 #a33830}
+  .cta:active{transform:translateY(3px);box-shadow:0 2px 0 #a33830}
+  .cta.small{padding:10px 22px;font-size:.9rem}
+  .cta.green{background:#3fae35;box-shadow:0 5px 0 #2b6e23}
+  .cta.green:active{box-shadow:0 2px 0 #2b6e23}
+  .cta:focus-visible,button:focus-visible{outline:3px solid #2b6e23;outline-offset:2px}
+
+  /* setup */
+  .players label{display:block;font-weight:800;font-size:.82rem;color:#6b6f5e;margin:10px 0 4px;text-transform:uppercase;letter-spacing:.06em}
+  .players input{width:100%;border:3px solid #d8dac9;border-radius:12px;padding:10px 14px;
+    font:800 1rem inherit;color:#23421c;background:#fdfcf7}
+  .players input:focus{outline:none;border-color:#3fae35}
+  .howto{font-size:.86rem;line-height:1.5;color:#5a6152;margin:0}
+  .howto b{color:#2b6e23}
+
+  /* pass screen */
+  .bigword{font-size:1.9rem;font-weight:800;color:#fff;-webkit-text-stroke:1.5px #2b6e23;text-shadow:0 3px 0 #2b6e23;text-align:center}
+
+  /* play header */
+  .hud{display:flex;justify-content:space-between;align-items:center;width:100%;gap:8px}
+  .hud .pill{font-size:.82rem;padding:6px 14px}
+  .hud .strokes{color:#e2574c}
+
+  /* gallery */
+  .gallery{width:100%;background:linear-gradient(#79c94f,#58b94c);border-radius:18px;box-shadow:0 5px 0 rgba(0,0,0,.14);
+    padding:8px 6px 6px;position:relative}
+  .fence{display:flex;justify-content:space-around;position:absolute;inset:auto 10px 6px 10px;height:12px}
+  .gal-row{display:flex;justify-content:space-around;align-items:flex-end}
+  .critter{width:31%;max-width:120px;border:none;background:none;padding:0;cursor:pointer;position:relative;font:inherit;color:inherit}
+  .critter svg{display:block;width:100%;height:auto}
+  .critter .cname{display:block;margin:2px auto 4px;background:#fff;border-radius:999px;padding:2px 10px;
+    font-size:.68rem;font-weight:800;color:#2b6e23;width:fit-content;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+  .critter .badge{position:absolute;top:2px;right:8px;background:#ffc93c;border-radius:999px;font-size:.62rem;
+    font-weight:800;color:#6b4c00;padding:2px 7px;box-shadow:0 2px 0 #cc9400;opacity:0;transition:opacity .3s}
+  .critter.used .badge{opacity:1}
+  .gal-hint{ text-align:center;font-size:.66rem;font-weight:800;color:#eaf7e6;letter-spacing:.05em;
+    text-transform:uppercase;margin:2px 0 2px;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+
+  /* critter faces + states */
+  .eyewide,.mouthO,.mouthF{opacity:0}
+  .st-gasp .eyewide,.st-gasp .mouthO{opacity:1}
+  .st-gasp .eyedot,.st-gasp .mouthS{opacity:0}
+  .st-sad .mouthF{opacity:1}
+  .st-sad .mouthS{opacity:0}
+  @keyframes hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  @keyframes hopOnce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  .st-cheer svg{animation:hop .6s ease-in-out infinite}
+  .st-sad svg{transform:rotate(-4deg)}
+  .critter.bounce svg{animation:hopOnce .45s ease-in-out}
+
+  /* speech bubble */
+  .bubble{position:absolute;left:50%;transform:translateX(-50%);top:6px;z-index:30;
+    background:#fff;border-radius:14px;box-shadow:0 4px 0 rgba(0,0,0,.18);padding:10px 14px;width:min(86vw,300px);
+    font-size:.85rem;font-weight:700;color:#23421c;text-align:center;display:none}
+  .bubble:after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);
+    border:10px solid transparent;border-top-color:#fff}
+  .bubble.show{display:block}
+  .bubble .brow{display:flex;gap:8px;justify-content:center;margin-top:8px}
+  .bubble button{border:none;border-radius:999px;padding:7px 14px;font:800 .78rem inherit;cursor:pointer}
+  .bubble .yes{background:#3fae35;color:#fff;box-shadow:0 3px 0 #2b6e23}
+  .bubble .no{background:#eceada;color:#5a6152;box-shadow:0 3px 0 #c9c6b2}
+  .gallerywrap{position:relative;width:100%}
+
+  /* grid */
+  .grid{display:grid;grid-template-rows:repeat(6,1fr);gap:6px}
+  .grow{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .tile{width:min(14.5vw,54px);height:min(14.5vw,54px);display:grid;place-items:center;font-weight:800;
+    font-size:clamp(1rem,6vw,1.5rem);text-transform:uppercase;background:#fff;border-radius:12px;
+    color:#23421c;box-shadow:0 3px 0 rgba(0,0,0,.14);transition:background .25s,color .25s,transform .15s}
+  .tile.filled{transform:scale(1.06)}
+  .tile.g{background:#3fae35;color:#fff;box-shadow:0 3px 0 #2b6e23}
+  .tile.y{background:#ffc93c;color:#6b4c00;box-shadow:0 3px 0 #cc9400}
+  .tile.x{background:#b9c0ae;color:#fff;box-shadow:0 3px 0 #8c9480}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+  .grow.shake{animation:shake .4s}
+
+  /* keyboard */
+  .kb{width:100%;display:flex;flex-direction:column;gap:6px;margin-top:auto;padding-top:6px}
+  .kbrow{display:flex;justify-content:center;gap:5px}
+  .key{flex:1;max-width:44px;border:none;background:#fff;border-radius:9px;padding:13px 0;cursor:pointer;
+    font:800 .95rem inherit;color:#23421c;text-transform:uppercase;box-shadow:0 3px 0 rgba(0,0,0,.16)}
+  .key.wide{max-width:66px;flex:1.6;font-size:.78rem}
+  .key:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.16)}
+  .key.g{background:#3fae35;color:#fff;box-shadow:0 3px 0 #2b6e23}
+  .key.y{background:#ffc93c;color:#6b4c00;box-shadow:0 3px 0 #cc9400}
+  .key.x{background:#b9c0ae;color:#fff;box-shadow:0 3px 0 #8c9480}
+
+  /* result overlay */
+  .overlay{position:fixed;inset:0;background:rgba(35,66,28,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .overlay.show{display:flex}
+  .rescard{background:#fff;border-radius:22px;box-shadow:0 8px 0 rgba(0,0,0,.25);padding:26px 22px;width:min(92vw,380px);
+    text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+  .resterm{font-size:2rem;font-weight:800;color:#e2574c}
+  .resdetail{font-size:1rem;color:#5a6152;font-weight:700}
+  .resword{font-size:.85rem;color:#8c9480;font-weight:700}
+  .resword b{color:#2b6e23;letter-spacing:.15em}
+
+  /* scorecard */
+  table.sc{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+  .sc th,.sc td{padding:8px 4px;text-align:center;font-size:.82rem}
+  .sc th{background:#e2574c;color:#fff;font-size:.66rem;letter-spacing:.08em;text-transform:uppercase}
+  .sc th:first-child{border-radius:10px 0 0 10px}
+  .sc th:last-child{border-radius:0 10px 10px 0}
+  .sc td{border-bottom:2px dashed #eceada;font-weight:700;color:#5a6152}
+  .sc td.name{text-align:left;color:#23421c}
+  .sc td.now{color:#e2574c}
+  .sc td.tot{color:#2b6e23;font-weight:800}
+
+  /* podium */
+  .podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;width:100%;margin-top:8px}
+  .pod{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;max-width:110px}
+  .pod .box{width:100%;background:#3fae35;border-radius:12px 12px 0 0;box-shadow:0 4px 0 #2b6e23;
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:1.2rem}
+  .pod .pname{font-weight:800;font-size:.82rem;text-align:center;background:#fff;border-radius:999px;
+    padding:3px 12px;box-shadow:0 2px 0 rgba(0,0,0,.12)}
+  .pod .medal{font-size:1.6rem}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+  .confetti{position:fixed;top:-20px;width:12px;height:12px;border-radius:3px;z-index:5;animation:fall 3.2s linear forwards;pointer-events:none}
+
+  @media (prefers-reduced-motion: reduce){*{animation:none !important}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SETUP -->
+  <section class="screen active" id="scr-setup">
+    <h1 class="logo">WORDLE GOLF</h1>
+    <div class="sub">⛳ Windmill Lane Course</div>
+    <div class="card players">
+      <p class="howto"><b>How it works:</b> 5 holes, each hole is a secret word. Every guess = 1 stroke.
+        Lowest total after 5 holes wins! Your gallery of critters knows the word. Tap one for a hint,
+        but their advice costs <b>+1 stroke</b>. Pass the phone between turns. 🤫</p>
+      <label for="p1">Player 1</label><input id="p1" maxlength="12" placeholder="Name" autocomplete="off">
+      <label for="p2">Player 2</label><input id="p2" maxlength="12" placeholder="Name (optional)" autocomplete="off">
+      <label for="p3">Player 3</label><input id="p3" maxlength="12" placeholder="Name (optional)" autocomplete="off">
+      <label for="p4">Player 4</label><input id="p4" maxlength="12" placeholder="Name (optional)" autocomplete="off">
+    </div>
+    <button class="cta" id="btn-start">⛳ Tee off!</button>
+  </section>
+
+  <!-- PASS -->
+  <section class="screen" id="scr-pass">
+    <div style="flex:1"></div>
+    <div class="pill" id="pass-hole">Hole 1 · Par 4</div>
+    <div class="bigword" id="pass-name">Pass to Maya!</div>
+    <p class="howto" style="color:#33531f;text-align:center;font-weight:700">No peeking, everyone else! 👀<br>Your own gallery is waiting for you.</p>
+    <button class="cta green" id="btn-tee">I'm ready, tee off!</button>
+    <div style="flex:1.4"></div>
+  </section>
+
+  <!-- PLAY -->
+  <section class="screen" id="scr-play">
+    <div class="hud">
+      <span class="pill" id="hud-hole">Hole 1/5 · Par 4</span>
+      <span class="pill" id="hud-player">⛳ Maya · <span class="strokes" id="hud-strokes">0 strokes</span></span>
+    </div>
+    <div class="gallerywrap">
+      <div class="bubble" id="bubble"></div>
+      <div class="gallery">
+        <div class="gal-row" id="gal"></div>
+        <div class="gal-hint">tap a critter for a hint · +1 stroke</div>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="kb" id="kb"></div>
+  </section>
+
+  <!-- HOLE SCORECARD -->
+  <section class="screen" id="scr-hole">
+    <h1 class="logo" style="font-size:1.7rem" id="hole-title">Hole 1 done!</h1>
+    <div class="card"><table class="sc" id="scorecard"></table></div>
+    <button class="cta" id="btn-nexthole">Next hole →</button>
+  </section>
+
+  <!-- FINAL -->
+  <section class="screen" id="scr-final">
+    <h1 class="logo" style="font-size:1.9rem">🏆 Final Scores</h1>
+    <div class="podium" id="podium"></div>
+    <div class="card"><table class="sc" id="finalcard"></table></div>
+    <div style="display:flex;gap:10px">
+      <button class="cta green" id="btn-again">↺ Same players</button>
+      <button class="cta" id="btn-new">New players</button>
+    </div>
+  </section>
+
+  <!-- RESULT OVERLAY -->
+  <div class="overlay" id="overlay">
+    <div class="rescard">
+      <div class="resterm" id="res-term">🐦 Birdie!</div>
+      <div class="resdetail" id="res-detail">3 strokes on a par 4</div>
+      <div class="resword" id="res-word"></div>
+      <button class="cta" id="btn-resnext">Continue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ CRITTER ART ============ */
+const OUT='#4a5245';
+function face(fx,fy,s=1){
+  return `<g class="face" transform="translate(${fx},${fy}) scale(${s})">
+    <circle class="eyedot" cx="-9" cy="0" r="3" fill="#22251f"/>
+    <circle class="eyedot" cx="9" cy="0" r="3" fill="#22251f"/>
+    <g class="eyewide">
+      <circle cx="-9" cy="0" r="6" fill="#fff" stroke="#22251f" stroke-width="2"/>
+      <circle cx="9" cy="0" r="6" fill="#fff" stroke="#22251f" stroke-width="2"/>
+      <circle cx="-9" cy="0" r="2.6" fill="#22251f"/><circle cx="9" cy="0" r="2.6" fill="#22251f"/>
+    </g>
+    <path class="mouthS" d="M-8,9 q8,7 16,0" fill="none" stroke="#22251f" stroke-width="2.6" stroke-linecap="round"/>
+    <circle class="mouthO" cx="0" cy="11" r="4.5" fill="#22251f"/>
+    <path class="mouthF" d="M-8,13 q8,-6 16,0" fill="none" stroke="#22251f" stroke-width="2.6" stroke-linecap="round"/>
+  </g>`;
+}
+const HEAD={round:[60,82,36],tall:[60,48,20],box:[60,46,2],cloud:[60,58,26],star:[60,44,20],
+            fish:[48,60,22],bird:[60,52,28],crab:[60,70,26],ghost:[60,48,28],snake:[72,34,13]};
+const BODY={
+  round:(c,c2)=>({s:`<circle cx="60" cy="82" r="36" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <ellipse cx="60" cy="98" rx="17" ry="12" fill="${c2}" opacity=".8"/>`,f:[60,74,1]}),
+  tall:(c,c2)=>({s:`<ellipse cx="60" cy="88" rx="27" ry="31" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <ellipse cx="60" cy="96" rx="15" ry="16" fill="${c2}" opacity=".85"/>
+    <circle cx="60" cy="48" r="21" fill="${c}" stroke="${OUT}" stroke-width="3"/>`,f:[60,46,.92]}),
+  box:(c,c2)=>({s:`<line x1="48" y1="112" x2="48" y2="118" stroke="${OUT}" stroke-width="5"/>
+    <line x1="72" y1="112" x2="72" y2="118" stroke="${OUT}" stroke-width="5"/>
+    <rect x="30" y="46" width="60" height="66" rx="12" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <rect x="41" y="58" width="38" height="30" rx="7" fill="${c2}"/>`,f:[60,72,.9]}),
+  cloud:(c)=>({s:`<ellipse cx="60" cy="88" rx="38" ry="24" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <circle cx="44" cy="70" r="17" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <circle cx="74" cy="68" r="20" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <ellipse cx="60" cy="88" rx="38" ry="24" fill="${c}"/><circle cx="44" cy="70" r="17" fill="${c}"/><circle cx="74" cy="68" r="20" fill="${c}"/>`,f:[60,82,1]}),
+  star:(c)=>{let p='';for(let i=0;i<10;i++){const R=i%2?17:39,a=-Math.PI/2+i*Math.PI/5;
+    p+=`${(60+R*Math.cos(a)).toFixed(1)},${(76+R*Math.sin(a)).toFixed(1)} `;}
+    return{s:`<polygon points="${p}" fill="${c}" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>`,f:[60,74,.95]}},
+  fish:(c,c2)=>({s:`<polygon points="80,78 104,58 104,98" fill="${c2}" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
+    <ellipse cx="55" cy="78" rx="33" ry="24" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <polygon points="48,54 60,38 68,56" fill="${c2}" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>`,f:[46,72,.85]}),
+  bird:(c,c2)=>({s:`<line x1="52" y1="106" x2="52" y2="118" stroke="${OUT}" stroke-width="4"/>
+    <line x1="68" y1="106" x2="68" y2="118" stroke="${OUT}" stroke-width="4"/>
+    <circle cx="60" cy="78" r="30" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <ellipse cx="42" cy="86" rx="12" ry="17" fill="${c2}" stroke="${OUT}" stroke-width="2.6"/>
+    <polygon points="86,72 103,79 86,85" fill="#f28c28" stroke="${OUT}" stroke-width="2.6" stroke-linejoin="round"/>`,f:[64,66,.9]}),
+  crab:(c,c2)=>({s:`<line x1="34" y1="80" x2="24" y2="66" stroke="${OUT}" stroke-width="4"/>
+    <line x1="86" y1="80" x2="96" y2="66" stroke="${OUT}" stroke-width="4"/>
+    <circle cx="22" cy="58" r="11" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <circle cx="98" cy="58" r="11" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <path d="M18,52 l-3,-7 M28,52 l3,-7" stroke="${OUT}" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M92,52 l-3,-7 M102,52 l3,-7" stroke="${OUT}" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <line x1="40" y1="104" x2="30" y2="116" stroke="${OUT}" stroke-width="4"/>
+    <line x1="80" y1="104" x2="90" y2="116" stroke="${OUT}" stroke-width="4"/>
+    <ellipse cx="60" cy="88" rx="33" ry="24" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <ellipse cx="60" cy="98" rx="16" ry="10" fill="${c2}" opacity=".7"/>`,f:[60,82,.95]}),
+  ghost:(c)=>({s:`<path d="M32,116 L32,72 A28,28 0 0 1 88,72 L88,116 q-7,-9 -14,0 q-7,9 -14,0 q-7,9 -14,0 q-7,-9 -14,0 z"
+    fill="${c}" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>`,f:[60,72,1]}),
+  snake:(c,c2)=>({s:`<ellipse cx="58" cy="98" rx="32" ry="18" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <ellipse cx="58" cy="98" rx="18" ry="9" fill="${c2}" opacity=".6"/>
+    <path d="M80,92 q20,-8 14,-32 q-4,-15 -20,-16" fill="none" stroke="${OUT}" stroke-width="17" stroke-linecap="round"/>
+    <path d="M80,92 q20,-8 14,-32 q-4,-15 -20,-16" fill="none" stroke="${c}" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="72" cy="43" r="14" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <path d="M58,46 l-9,3 m9,-3 l-8,-3" stroke="#e2574c" stroke-width="2.4" stroke-linecap="round" fill="none"/>`,f:[74,40,.75]})
+};
+const ACC={
+  earsRound:(b,c)=>{const[x,y,r]=HEAD[b];return`<circle cx="${x-r*.62}" cy="${y-r*.72}" r="${r*.42}" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <circle cx="${x+r*.62}" cy="${y-r*.72}" r="${r*.42}" fill="${c}" stroke="${OUT}" stroke-width="3"/>`},
+  earsPointy:(b,c)=>{const[x,y,r]=HEAD[b];return`<polygon points="${x-r*.85},${y-r*.35} ${x-r*.45},${y-r*1.25} ${x-r*.15},${y-r*.7}" fill="${c}" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="${x+r*.85},${y-r*.35} ${x+r*.45},${y-r*1.25} ${x+r*.15},${y-r*.7}" fill="${c}" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>`},
+  earsLong:(b,c)=>{const[x,y,r]=HEAD[b];return`<ellipse cx="${x-r*.5}" cy="${y-r*1.3}" rx="7" ry="20" fill="${c}" stroke="${OUT}" stroke-width="3"/>
+    <ellipse cx="${x+r*.5}" cy="${y-r*1.3}" rx="7" ry="20" fill="${c}" stroke="${OUT}" stroke-width="3"/>`},
+  antenna:(b)=>{const[x,y,r]=HEAD[b];return`<line x1="${x}" y1="${y-r}" x2="${x}" y2="${y-r-16}" stroke="${OUT}" stroke-width="3"/>
+    <circle cx="${x}" cy="${y-r-19}" r="5" fill="#ffc93c" stroke="${OUT}" stroke-width="2.6"/>`},
+  antenna2:(b)=>{const[x,y,r]=HEAD[b];return`<line x1="${x-8}" y1="${y-r+2}" x2="${x-13}" y2="${y-r-13}" stroke="${OUT}" stroke-width="3"/>
+    <line x1="${x+8}" y1="${y-r+2}" x2="${x+13}" y2="${y-r-13}" stroke="${OUT}" stroke-width="3"/>
+    <circle cx="${x-13}" cy="${y-r-16}" r="4" fill="#ffc93c" stroke="${OUT}" stroke-width="2.4"/>
+    <circle cx="${x+13}" cy="${y-r-16}" r="4" fill="#ffc93c" stroke="${OUT}" stroke-width="2.4"/>`},
+  stripes:(b,c,c2)=>b==='tall'
+    ?`<path d="M38,80 q8,6 16,2 M66,110 q10,2 18,-4 M40,102 q7,5 14,3" fill="none" stroke="${c2}" stroke-width="6" stroke-linecap="round"/>`
+    :`<path d="M28,70 q5,6 12,5 M80,68 q7,-1 11,-5 M50,115 q10,3 20,-1" fill="none" stroke="${c2}" stroke-width="6" stroke-linecap="round"/>`,
+  chefhat:(b)=>{const[x,y,r]=HEAD[b];return`<rect x="${x-14}" y="${y-r-14}" width="28" height="14" fill="#fff" stroke="${OUT}" stroke-width="2.6"/>
+    <circle cx="${x-10}" cy="${y-r-16}" r="8" fill="#fff" stroke="${OUT}" stroke-width="2.6"/>
+    <circle cx="${x+10}" cy="${y-r-16}" r="8" fill="#fff" stroke="${OUT}" stroke-width="2.6"/>
+    <circle cx="${x}" cy="${y-r-20}" r="9" fill="#fff" stroke="${OUT}" stroke-width="2.6"/>`},
+  crown:(b)=>{const[x,y,r]=HEAD[b];const t=y-r-2;return`<polygon points="${x-16},${t} ${x-16},${t-16} ${x-8},${t-7} ${x},${t-18} ${x+8},${t-7} ${x+16},${t-16} ${x+16},${t}"
+    fill="#ffc93c" stroke="${OUT}" stroke-width="2.6" stroke-linejoin="round"/>`},
+  partyhat:(b)=>{const[x,y,r]=HEAD[b];const t=y-r+4;return`<polygon points="${x-13},${t} ${x},${t-26} ${x+13},${t}" fill="#9b6bd4" stroke="${OUT}" stroke-width="2.6" stroke-linejoin="round"/>
+    <circle cx="${x}" cy="${t-27}" r="4.5" fill="#ffc93c" stroke="${OUT}" stroke-width="2"/>`},
+  leaf:(b)=>{const[x,y,r]=HEAD[b];return`<path d="M${x},${y-r} q-2,-14 -14,-16 q2,14 14,16 z" fill="#2b8f23" stroke="${OUT}" stroke-width="2.4" stroke-linejoin="round"/>`},
+  flower:(b)=>{const[x,y,r]=HEAD[b];const t=y-r-6;let s='';
+    for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2;s+=`<circle cx="${(x+9*Math.cos(a)).toFixed(1)}" cy="${(t+9*Math.sin(a)).toFixed(1)}" r="5.5" fill="#f7a1c4" stroke="${OUT}" stroke-width="2"/>`;}
+    return s+`<circle cx="${x}" cy="${t}" r="5" fill="#ffc93c" stroke="${OUT}" stroke-width="2"/>`},
+  wings:(b,c)=>`<ellipse cx="26" cy="70" rx="9" ry="16" fill="#eaf4fb" stroke="${OUT}" stroke-width="2.6" transform="rotate(-18 26 70)"/>
+    <ellipse cx="94" cy="70" rx="9" ry="16" fill="#eaf4fb" stroke="${OUT}" stroke-width="2.6" transform="rotate(18 94 70)"/>`,
+  shell:(b,c,c2)=>`<ellipse cx="60" cy="66" rx="26" ry="18" fill="${c2}" stroke="${OUT}" stroke-width="3"/>
+    <path d="M46,58 q14,-8 28,0 M42,68 q18,-10 36,0" fill="none" stroke="${OUT}" stroke-width="2.2"/>`,
+  bowtie:(b)=>{const[x,y,r]=HEAD[b];const t=y+r*1.05;return`<polygon points="${x},${t} ${x-14},${t-7} ${x-14},${t+7}" fill="#e2574c" stroke="${OUT}" stroke-width="2.4" stroke-linejoin="round"/>
+    <polygon points="${x},${t} ${x+14},${t-7} ${x+14},${t+7}" fill="#e2574c" stroke="${OUT}" stroke-width="2.4" stroke-linejoin="round"/>`},
+  scarf:(b,c,c2)=>`<rect x="38" y="96" width="44" height="11" rx="5" fill="#e2574c" stroke="${OUT}" stroke-width="2.6"/>
+    <rect x="70" y="102" width="10" height="14" rx="4" fill="#e2574c" stroke="${OUT}" stroke-width="2.4"/>`,
+  facepatch:(b)=>{const[x,y,r]=HEAD[b];return`<ellipse cx="${x}" cy="${y+2}" rx="${r*.8}" ry="${r*.72}" fill="#fdfcf7"/>`},
+  rays:(b,c)=>{let s='';for(let i=0;i<8;i++){const a=i*Math.PI/4;
+    s+=`<line x1="${(60+42*Math.cos(a)).toFixed(1)}" y1="${(82+42*Math.sin(a)).toFixed(1)}" x2="${(60+52*Math.cos(a)).toFixed(1)}" y2="${(82+52*Math.sin(a)).toFixed(1)}" stroke="${c}" stroke-width="5" stroke-linecap="round"/>`;}
+    return s},
+  legs:(b,c)=>`<path d="M36,108 q-8,14 4,18 M52,112 q-3,14 8,16 M68,112 q3,14 -8,16 M84,108 q8,14 -4,18"
+    fill="none" stroke="${c}" stroke-width="9" stroke-linecap="round"/>`,
+  cap:(b,c2)=>{const[x,y,r]=HEAD[b];return`<path d="M${x-r*.9},${y-r*.5} a${r*.9},${r*.7} 0 0 1 ${r*1.8},0 z" fill="${c2}" stroke="${OUT}" stroke-width="2.6"/>
+    <rect x="${x-r*.5}" y="${y-r*.55}" width="${r}" height="6" rx="3" fill="${c2}" stroke="${OUT}" stroke-width="2"/>`}
+};
+function critterSVG(ch){
+  const body=BODY[ch.b](ch.c,ch.c2||'#fff');
+  const behind=(ch.a||[]).filter(a=>['earsRound','earsPointy','earsLong','shell','rays','legs','wings'].includes(a));
+  const front=(ch.a||[]).filter(a=>!behind.includes(a));
+  const acc=l=>l.map(a=>ACC[a](ch.b,ch.c,ch.c2||'#fff')).join('');
+  const[fx,fy,fs]=body.f;
+  return`<svg viewBox="0 0 120 130" role="img" aria-label="${ch.n}">${acc(behind)}${body.s}${acc(front)}${face(fx,fy,fs)}</svg>`;
+}
+
+/* ============ COURSE BANK ============ */
+const BANK=[
+ {w:"beach",par:3,chars:[
+   {n:"Sandy",b:"crab",c:"#e2574c",c2:"#f7a1c4"},
+   {n:"Gully",b:"bird",c:"#eef2f5",c2:"#c3ccd4"},
+   {n:"Shelly",b:"tall",c:"#3fae35",c2:"#8fd77a",a:["shell"]}],
+  hints:["It's where you'd find all three of us on a sunny day!","It starts with a B!","It rhymes with 'peach'!"]},
+ {w:"pizza",par:3,chars:[
+   {n:"Pepe",b:"tall",c:"#9db0b5",c2:"#f7a1c4",a:["earsRound","chefhat"]},
+   {n:"Mozz",b:"round",c:"#fdf6e6",c2:"#ffe9a8"},
+   {n:"Ollie",b:"round",c:"#3fae35",c2:"#8fd77a",a:["leaf"]}],
+  hints:["You eat it in triangle slices!","It starts with a P!","It has a double letter in the middle!"]},
+ {w:"candy",par:3,chars:[
+   {n:"Loli",b:"round",c:"#f7a1c4",c2:"#fdd7e6",a:["partyhat"]},
+   {n:"Gummy",b:"tall",c:"#e2574c",c2:"#f08a80",a:["earsRound"]},
+   {n:"Minty",b:"round",c:"#45c4b0",c2:"#a3e8dd"}],
+  hints:["Sweet stuff! The dentist's worst enemy!","It starts with a C!","It rhymes with 'sandy'!"]},
+ {w:"robot",par:3,chars:[
+   {n:"Bolt",b:"box",c:"#9db0b5",c2:"#d7e6ec",a:["antenna"]},
+   {n:"Chip",b:"box",c:"#7ac3e8",c2:"#d7f0fb",a:["antenna"]},
+   {n:"Widget",b:"box",c:"#f28c28",c2:"#ffd9ae",a:["antenna"]}],
+  hints:["Beep boop! You're looking at three of them!","It starts with an R!","It has two O's in it!"]},
+ {w:"tiger",par:4,chars:[
+   {n:"Stripe",b:"tall",c:"#f28c28",c2:"#ffd9ae",a:["earsRound","stripes"]},
+   {n:"Whisker",b:"round",c:"#f28c28",c2:"#ffd9ae",a:["earsPointy","stripes"]},
+   {n:"Polly",b:"bird",c:"#3fae35",c2:"#ffc93c"}],
+  hints:["A very big cat with stripes!","It starts with a T!","It ends with R… and it ROARS!"]},
+ {w:"storm",par:4,chars:[
+   {n:"Zappy",b:"cloud",c:"#9db0b5"},
+   {n:"Rumble",b:"cloud",c:"#6b7d8c"},
+   {n:"Puddles",b:"round",c:"#3fae35",c2:"#8fd77a"}],
+  hints:["Dark clouds, thunder and lightning!","It starts with an S!","It rhymes with 'form'!"]},
+ {w:"music",par:4,chars:[
+   {n:"Melody",b:"bird",c:"#7ac3e8",c2:"#d7f0fb",a:["bowtie"]},
+   {n:"Boom",b:"box",c:"#e2574c",c2:"#ffd9ae"},
+   {n:"Jazzy",b:"round",c:"#9b6bd4",c2:"#d3bcf0",a:["partyhat"]}],
+  hints:["You can hum it, sing it, or dance to it!","It starts with an M!","It ends with a C!"]},
+ {w:"space",par:4,chars:[
+   {n:"Cosmo",b:"round",c:"#3fae35",c2:"#8fd77a",a:["antenna2"]},
+   {n:"Luna",b:"round",c:"#e8e4d8",c2:"#f7f4ec"},
+   {n:"Twinkle",b:"star",c:"#ffc93c"}],
+  hints:["Rockets go there! It's HUGE and full of stars!","It starts with an S!","It rhymes with 'race'!"]},
+ {w:"ghost",par:4,chars:[
+   {n:"Boo",b:"ghost",c:"#fdfcf7"},
+   {n:"Wisp",b:"ghost",c:"#dfe8f2"},
+   {n:"Batty",b:"round",c:"#9b6bd4",c2:"#d3bcf0",a:["earsPointy","wings"]}],
+  hints:["Spooky! It says BOO!","It starts with a G!","It has a silent H in it!"]},
+ {w:"plant",par:4,chars:[
+   {n:"Sprout",b:"round",c:"#3fae35",c2:"#8fd77a",a:["leaf"]},
+   {n:"Fern",b:"tall",c:"#2b8f23",c2:"#8fd77a",a:["leaf"]},
+   {n:"Buzz",b:"round",c:"#ffc93c",c2:"#6b4c00",a:["stripes","antenna2","wings"]}],
+  hints:["It grows in a pot and loves sunshine!","It starts with a P!","It's 'ant' with PL stuck on the front!"]},
+ {w:"ocean",par:4,chars:[
+   {n:"Finn",b:"fish",c:"#7ac3e8",c2:"#4a90c2"},
+   {n:"Otto",b:"round",c:"#9b6bd4",c2:"#d3bcf0",a:["legs"]},
+   {n:"Pearl",b:"round",c:"#f7a1c4",c2:"#fdd7e6",a:["shell"]}],
+  hints:["It's big, blue, and full of fish!","It starts with an O!","Waves and whales live in it!"]},
+ {w:"honey",par:4,chars:[
+   {n:"Buzzy",b:"round",c:"#ffc93c",c2:"#6b4c00",a:["stripes","antenna2","wings"]},
+   {n:"Cub",b:"tall",c:"#a9743f",c2:"#d9b98c",a:["earsRound"]},
+   {n:"Blossom",b:"round",c:"#f7a1c4",c2:"#fdd7e6",a:["flower"]}],
+  hints:["Bees make it, bears steal it!","It starts with an H!","It rhymes with 'money'!"]},
+ {w:"magic",par:4,chars:[
+   {n:"Presto",b:"tall",c:"#fdfcf7",c2:"#e8e4d8",a:["earsLong","bowtie"]},
+   {n:"Wanda",b:"star",c:"#9b6bd4"},
+   {n:"Sparks",b:"star",c:"#ffc93c"}],
+  hints:["Abracadabra! Wands, hats and rabbits!","It starts with an M!","It ends with a C!"]},
+ {w:"train",par:4,chars:[
+   {n:"Choo",b:"box",c:"#e2574c",c2:"#d7e6ec"},
+   {n:"Casey",b:"round",c:"#9db0b5",c2:"#d7e6ec",a:["earsPointy","cap"]},
+   {n:"Puff",b:"cloud",c:"#f4f4f0"}],
+  hints:["Choo choo! It runs on tracks!","It starts with a T!","It rhymes with 'rain'!"]},
+ {w:"snake",par:4,chars:[
+   {n:"Slinky",b:"snake",c:"#3fae35",c2:"#8fd77a"},
+   {n:"Hisster",b:"snake",c:"#9b6bd4",c2:"#d3bcf0"},
+   {n:"Eggy",b:"round",c:"#fdfcf7",c2:"#f0e9d2"}],
+  hints:["A long, slithery reptile… ssssss!","It starts with an S!","It rhymes with 'cake'!"]},
+ {w:"frost",par:4,chars:[
+   {n:"Flaky",b:"round",c:"#fdfcf7",c2:"#dfe8f2",a:["scarf"]},
+   {n:"Chilly",b:"tall",c:"#2b3a4a",c2:"#fdfcf7",a:["facepatch"]},
+   {n:"Nippy",b:"star",c:"#7ac3e8"}],
+  hints:["Brrr! Winter paints it on the windows!","It starts with an F!","It rhymes with 'lost'!"]},
+ {w:"dance",par:4,chars:[
+   {n:"Twirl",b:"bird",c:"#f7a1c4",c2:"#fdd7e6"},
+   {n:"Boogie",b:"tall",c:"#a9743f",c2:"#d9b98c",a:["earsRound","partyhat"]},
+   {n:"DJ Bug",b:"round",c:"#9b6bd4",c2:"#d3bcf0",a:["antenna2"]}],
+  hints:["Wiggle, spin and move to the music!","It starts with a D!","It rhymes with 'prance'!"]},
+ {w:"light",par:4,chars:[
+   {n:"Glow",b:"round",c:"#ffc93c",c2:"#fff3c9",a:["wings","antenna2"]},
+   {n:"Sunny",b:"round",c:"#ffc93c",c2:"#ffe9a8",a:["rays"]},
+   {n:"Sparky",b:"box",c:"#45c4b0",c2:"#fff3c9",a:["antenna"]}],
+  hints:["Flip a switch and you get it!","It starts with an L!","It has a sneaky silent GH!"]},
+ {w:"dream",par:4,chars:[
+   {n:"Dozy",b:"tall",c:"#b8a58c",c2:"#e3d5c2",a:["earsRound"]},
+   {n:"Pillow",b:"box",c:"#fdfcf7",c2:"#e8ecf5"},
+   {n:"Nimbus",b:"cloud",c:"#efe6f7"}],
+  hints:["It happens while you're fast asleep!","It starts with a D!","It rhymes with 'ice cream'… well, the cream part!"]},
+ {w:"shark",par:4,chars:[
+   {n:"Chomp",b:"fish",c:"#9db0b5",c2:"#6b7d8c"},
+   {n:"Gnasher",b:"fish",c:"#7ac3e8",c2:"#4a90c2"},
+   {n:"Remy",b:"fish",c:"#ffc93c",c2:"#f28c28"}],
+  hints:["A big fish with LOTS of teeth!","It starts with an S!","It rhymes with 'park'!"]},
+ {w:"queen",par:5,chars:[
+   {n:"Corgi",b:"tall",c:"#f28c28",c2:"#ffd9ae",a:["earsPointy"]},
+   {n:"Regalia",b:"round",c:"#9b6bd4",c2:"#d3bcf0",a:["crown"]},
+   {n:"Jewel",b:"star",c:"#45c4b0"}],
+  hints:["She wears a crown and waves very politely!","It starts with a Q!","It has a double E!"]},
+ {w:"juice",par:5,chars:[
+   {n:"Squeezy",b:"round",c:"#f28c28",c2:"#ffd9ae",a:["leaf"]},
+   {n:"Berry",b:"round",c:"#9b6bd4",c2:"#d3bcf0",a:["leaf"]},
+   {n:"Straws",b:"tall",c:"#f7a1c4",c2:"#fdd7e6",a:["stripes"]}],
+  hints:["You drink it at breakfast! Orange is classic!","It starts with a J!","Squeeze a fruit and out it comes!"]},
+ {w:"zebra",par:5,chars:[
+   {n:"Ziggy",b:"tall",c:"#fdfcf7",c2:"#23421c",a:["earsPointy","stripes"]},
+   {n:"Dazzle",b:"tall",c:"#e8e4d8",c2:"#23421c",a:["earsPointy","stripes"]},
+   {n:"Reff",b:"bird",c:"#9db0b5",c2:"#23421c"}],
+  hints:["A horse in a stripy referee uniform!","It starts with a Z!","It ends with an A!"]},
+ {w:"crown",par:5,chars:[
+   {n:"King Ribbit",b:"round",c:"#3fae35",c2:"#8fd77a",a:["crown"]},
+   {n:"Herald",b:"bird",c:"#e2574c",c2:"#f08a80",a:["bowtie"]},
+   {n:"Gemma",b:"star",c:"#f7a1c4"}],
+  hints:["A king wears one on his head!","It starts with a C!","It rhymes with 'brown'!"]}
+];
+
+/* ============ QUIPS ============ */
+const Q={
+  none:["Oof! Total whiff!","That putt rolled right past everything!","Hmm… none of those letters, friend!","The windmill laughed at that one. Sorry."],
+  some:["Ooh, getting closer!","Nice putt! Keep rolling!","I can feel it… you're on the green!","Not bad, not bad at all!"],
+  hot:["SO CLOSE! I can't look!!","It's RIGHT THERE!","*gasp* *gasp* *gasp*","My whiskers are tingling!!"],
+  invalid:["That's not a word I know!","Hmm, my dictionary says nope!","Try a real word, champ!"],
+  fail:["Aw, lost ball… we'll get the next one!","Splash! Right into the pond.","Even the pros have bad holes!"]
+};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a};
+
+/* ============ GAME STATE ============ */
+const $=id=>document.getElementById(id);
+let G=null; // {players, pars, assign, results, hole, p}
+let C=null; // current turn {entry, rows, cur, done, hintsUsed, keys}
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+
+function buildCourse(players){
+  const pars=shuffle([3,4,4,4,5]);
+  const pool={3:shuffle(BANK.filter(e=>e.par===3)),4:shuffle(BANK.filter(e=>e.par===4)),5:shuffle(BANK.filter(e=>e.par===5))};
+  const assign=pars.map(par=>players.map(()=>pool[par].pop()));
+  return{players,pars,assign,results:pars.map(()=>players.map(()=>null)),hole:0,p:0};
+}
+
+/* setup */
+$('btn-start').addEventListener('click',()=>{
+  const names=[1,2,3,4].map(i=>$('p'+i).value.trim()).filter(Boolean);
+  if(!names.length){$('p1').focus();return;}
+  localStorage.setItem('wg-names',JSON.stringify(names));
+  G=buildCourse(names);
+  passScreen();
+});
+try{(JSON.parse(localStorage.getItem('wg-names'))||[]).forEach((n,i)=>{if(i<4)$('p'+(i+1)).value=n;});}catch(e){}
+
+function passScreen(){
+  $('pass-hole').textContent=`Hole ${G.hole+1} of 5 · Par ${G.pars[G.hole]}`;
+  $('pass-name').textContent=G.players.length>1?`Pass to ${G.players[G.p]}!`:`Ready, ${G.players[G.p]}?`;
+  show('scr-pass');
+}
+$('btn-tee').addEventListener('click',startTurn);
+
+/* ============ TURN ============ */
+function startTurn(){
+  const entry=G.assign[G.hole][G.p];
+  C={entry,rows:[],cur:"",done:false,hintsUsed:0,keys:{}};
+  $('hud-hole').textContent=`Hole ${G.hole+1}/5 · Par ${entry.par}`;
+  renderHud();renderGallery();renderGrid();renderKb();
+  hideBubble();
+  show('scr-play');
+  setTimeout(()=>say(pick([`Fore! The gallery is watching, ${G.players[G.p]}!`,`We know the word… do you? Hee hee!`,`Good luck! Tap one of us if you get stuck. For a price…`]),3200),350);
+}
+function renderHud(){
+  const s=C.rows.length+C.hintsUsed;
+  $('hud-player').innerHTML=`⛳ ${G.players[G.p]} · <span class="strokes" id="hud-strokes">${s} stroke${s===1?'':'s'}</span>`;
+}
+function renderGallery(){
+  $('gal').innerHTML=C.entry.chars.map((ch,i)=>
+    `<button class="critter" data-i="${i}" aria-label="${ch.n} — tap for a hint, costs one stroke">
+      <span class="badge">hint used</span>${critterSVG(ch)}<span class="cname">${ch.n}</span></button>`).join('');
+  $('gal').querySelectorAll('.critter').forEach(el=>el.addEventListener('click',()=>hintTap(el)));
+}
+function renderGrid(){
+  $('grid').innerHTML=Array.from({length:6},(_,r)=>
+    `<div class="grow" data-r="${r}">${Array.from({length:5},(_,c)=>`<div class="tile" data-c="${c}"></div>`).join('')}</div>`).join('');
+}
+const KROWS=["qwertyuiop","asdfghjkl","↵zxcvbnm⌫"];
+function renderKb(){
+  $('kb').innerHTML=KROWS.map(row=>`<div class="kbrow">${[...row].map(k=>{
+    const wide=k==='↵'||k==='⌫';
+    return`<button class="key${wide?' wide':''}" data-k="${k}">${k==='↵'?'enter':k==='⌫'?'⌫':k}</button>`}).join('')}</div>`).join('');
+  $('kb').querySelectorAll('.key').forEach(b=>b.addEventListener('click',()=>keyIn(b.dataset.k)));
+}
+document.addEventListener('keydown',e=>{
+  if(!$('scr-play').classList.contains('active')||$('overlay').classList.contains('show'))return;
+  if(e.key==='Enter')keyIn('↵');
+  else if(e.key==='Backspace')keyIn('⌫');
+  else if(/^[a-zA-Z]$/.test(e.key))keyIn(e.key.toLowerCase());
+});
+
+function keyIn(k){
+  if(C.done)return;
+  if(k==='↵'){submit();return;}
+  if(k==='⌫'){C.cur=C.cur.slice(0,-1);drawCur();return;}
+  if(C.cur.length<5){C.cur+=k;drawCur();}
+}
+function drawCur(){
+  const row=$('grid').querySelector(`[data-r="${C.rows.length}"]`);
+  if(!row)return;
+  [...row.children].forEach((t,i)=>{t.textContent=C.cur[i]||'';t.classList.toggle('filled',!!C.cur[i]);});
+}
+function score(guess,ans){
+  const res=Array(5).fill('x'),cnt={};
+  for(let i=0;i<5;i++)if(guess[i]===ans[i])res[i]='g';else cnt[ans[i]]=(cnt[ans[i]]||0)+1;
+  for(let i=0;i<5;i++)if(res[i]!=='g'&&cnt[guess[i]]){res[i]='y';cnt[guess[i]]--;}
+  return res;
+}
+function submit(){
+  if(C.cur.length<5)return;
+  const row=$('grid').querySelector(`[data-r="${C.rows.length}"]`);
+  if(!WORDS.has(C.cur)){
+    row.classList.add('shake');setTimeout(()=>row.classList.remove('shake'),450);
+    say(pick(Q.invalid),1800);return;
+  }
+  const g=C.cur,ans=C.entry.w,res=score(g,ans);
+  [...row.children].forEach((t,i)=>setTimeout(()=>{t.classList.remove('filled');t.classList.add(res[i]);},i*120));
+  for(let i=0;i<5;i++){
+    const cur=C.keys[g[i]];
+    const rank={g:3,y:2,x:1};
+    if(!cur||rank[res[i]]>rank[cur])C.keys[g[i]]=res[i];
+  }
+  setTimeout(()=>{$('kb').querySelectorAll('.key').forEach(b=>{
+    const st=C.keys[b.dataset.k];if(st){b.classList.remove('g','y','x');b.classList.add(st);}});},650);
+  C.rows.push(g);C.cur="";
+  renderHud();
+  const greens=res.filter(r=>r==='g').length,hits=res.filter(r=>r!=='x').length;
+  if(g===ans){finishTurn(true);return;}
+  if(C.rows.length===6){finishTurn(false);return;}
+  react(greens>=3?'gasp':null);
+  say(pick(hits===0?Q.none:greens>=3?Q.hot:Q.some),2200);
+}
+function react(state){
+  $('gal').querySelectorAll('.critter').forEach(el=>{
+    el.classList.remove('st-gasp','st-cheer','st-sad','bounce');
+    void el.offsetWidth;
+    el.classList.add('bounce');
+    if(state)el.classList.add('st-'+state);
+  });
+}
+function termFor(strokes,par,solved){
+  if(!solved)return"Lost ball! 😅";
+  if(strokes===1)return"HOLE-IN-ONE!! 🎉";
+  const d=strokes-par;
+  if(d<=-3)return"Albatross!! 🕊️";
+  if(d===-2)return"Eagle! 🦅";
+  if(d===-1)return"Birdie! 🐦";
+  if(d===0)return"Par ⛳";
+  if(d===1)return"Bogey 😬";
+  if(d===2)return"Double Bogey 🫣";
+  return`+${d} … ouch! 🌊`;
+}
+function finishTurn(solved){
+  C.done=true;
+  const strokes=(solved?C.rows.length:8)+C.hintsUsed;
+  G.results[G.hole][G.p]={strokes,solved,hints:C.hintsUsed};
+  react(solved?'cheer':'sad');
+  if(!solved)say(pick(Q.fail),2600);
+  setTimeout(()=>{
+    $('res-term').textContent=termFor(strokes,C.entry.par,solved);
+    $('res-detail').textContent=`${strokes} stroke${strokes===1?'':'s'} on a par ${C.entry.par}`+
+      (C.hintsUsed?` (incl. ${C.hintsUsed} hint${C.hintsUsed===1?'':'s'})`:'');
+    $('res-word').innerHTML=solved?'':`The word was <b>${C.entry.w.toUpperCase()}</b> (6 guesses + 2 penalty)`;
+    $('overlay').classList.add('show');
+  },solved?1100:1400);
+}
+$('btn-resnext').addEventListener('click',()=>{
+  $('overlay').classList.remove('show');
+  if(G.p+1<G.players.length){G.p++;passScreen();}
+  else holeCard();
+});
+
+/* ============ HINTS ============ */
+let bubbleTimer=null;
+function say(txt,ms){
+  const b=$('bubble');b.innerHTML=txt;b.classList.add('show');
+  clearTimeout(bubbleTimer);
+  if(ms)bubbleTimer=setTimeout(hideBubble,ms);
+}
+function hideBubble(){$('bubble').classList.remove('show');}
+function hintTap(el){
+  if(C.done)return;
+  const i=+el.dataset.i,ch=C.entry.chars[i],hint=C.entry.hints[i];
+  if(el.classList.contains('used')){say(`<b>${ch.n}:</b> "Like I said… ${hint}"`,3500);return;}
+  const b=$('bubble');
+  b.innerHTML=`<b>${ch.n}:</b> "Psst… want my hint? It'll cost you <b>+1 stroke</b>!"<div class="brow">
+    <button class="yes">Hint please!</button><button class="no">No way</button></div>`;
+  b.classList.add('show');clearTimeout(bubbleTimer);
+  b.querySelector('.yes').addEventListener('click',()=>{
+    C.hintsUsed++;el.classList.add('used');renderHud();
+    say(`<b>${ch.n}:</b> "${hint}"`,6000);
+  });
+  b.querySelector('.no').addEventListener('click',hideBubble);
+}
+
+/* ============ SCORECARD / FINAL ============ */
+function tableHTML(highlightHole){
+  let h='<tr><th style="text-align:left">Player</th>';
+  for(let i=0;i<5;i++)h+=`<th>H${i+1}<br><span style="font-weight:400">p${G.pars[i]}</span></th>`;
+  h+='<th>Total</th></tr>';
+  G.players.forEach((name,p)=>{
+    let tot=0;h+=`<tr><td class="name">${name}</td>`;
+    for(let i=0;i<5;i++){
+      const r=G.results[i][p];
+      if(r){tot+=r.strokes;h+=`<td class="${i===highlightHole?'now':''}">${r.strokes}</td>`;}
+      else h+='<td>–</td>';
+    }
+    h+=`<td class="tot">${tot||'–'}</td></tr>`;
+  });
+  return h;
+}
+function holeCard(){
+  $('hole-title').textContent=`Hole ${G.hole+1} done!`;
+  $('scorecard').innerHTML=tableHTML(G.hole);
+  $('btn-nexthole').textContent=G.hole===4?'🏆 Final scores':'Next hole →';
+  show('scr-hole');
+}
+$('btn-nexthole').addEventListener('click',()=>{
+  if(G.hole===4){finalScreen();return;}
+  G.hole++;G.p=0;passScreen();
+});
+function finalScreen(){
+  const coursePar=G.pars.reduce((a,b)=>a+b,0);
+  const totals=G.players.map((name,p)=>({name,tot:G.results.reduce((s,h)=>s+h[p].strokes,0)}))
+    .sort((a,b)=>a.tot-b.tot);
+  const medals=['🥇','🥈','🥉','🏅'];
+  const hts=[110,84,66,52];
+  $('podium').innerHTML=totals.map((t,i)=>{
+    const d=t.tot-coursePar;
+    return`<div class="pod"><span class="medal">${medals[i]||'🏅'}</span>
+      <span class="pname">${t.name}</span>
+      <div class="box" style="height:${hts[i]||46}px">${t.tot}<span style="font-size:.7rem;font-weight:700">&nbsp;(${d>0?'+':''}${d})</span></div></div>`;
+  }).join('');
+  $('finalcard').innerHTML=tableHTML(-1);
+  show('scr-final');
+  for(let i=0;i<60;i++){
+    const c=document.createElement('div');c.className='confetti';
+    c.style.left=Math.random()*100+'vw';
+    c.style.background=pick(['#e2574c','#ffc93c','#3fae35','#7ac3e8','#9b6bd4','#f7a1c4']);
+    c.style.animationDelay=Math.random()*1.6+'s';
+    c.style.transform=`rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),5200);
+  }
+}
+$('btn-again').addEventListener('click',()=>{G=buildCourse(G.players);passScreen();});
+$('btn-new').addEventListener('click',()=>{show('scr-setup');});
+</script>
+</body>
+</html>

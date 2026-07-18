@@ -1,0 +1,287 @@
+<title>Wordle Golf — 5 design directions</title>
+<style>
+  :root{
+    --bg:#f4f5f2; --ink:#22251f; --muted:#6b6f64; --line:#d8dad2; --chip:#ffffff; --accent:#2f6b3a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#181a16; --ink:#e8eae2; --muted:#9aa090; --line:#33362e; --chip:#22251f; --accent:#7fc98d; }
+  }
+  :root[data-theme="dark"]{ --bg:#181a16; --ink:#e8eae2; --muted:#9aa090; --line:#33362e; --chip:#22251f; --accent:#7fc98d; }
+  :root[data-theme="light"]{ --bg:#f4f5f2; --ink:#22251f; --muted:#6b6f64; --line:#d8dad2; --chip:#ffffff; --accent:#2f6b3a; }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,"Segoe UI",Helvetica,Arial,sans-serif;}
+  .wrap{max-width:980px;margin:0 auto;padding:28px 20px 64px;}
+  header.top h1{font-size:1.5rem;margin:0 0 4px;letter-spacing:-.01em}
+  header.top p{margin:0 0 22px;color:var(--muted);max-width:60ch}
+
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:26px}
+  .tabs button{
+    font:600 .85rem/1 inherit;letter-spacing:.02em;color:var(--muted);
+    background:var(--chip);border:1px solid var(--line);border-radius:999px;
+    padding:9px 15px;cursor:pointer;
+  }
+  .tabs button:hover{color:var(--ink)}
+  .tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .panel{display:none}
+  .panel.active{display:block}
+  .brief{margin:0 0 18px;color:var(--muted);max-width:70ch}
+  .brief strong{color:var(--ink)}
+
+  /* mockup stage */
+  .stage{border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+  .mock{padding:36px 24px 44px;display:flex;flex-direction:column;align-items:center;gap:22px;min-height:560px}
+  .grid{display:grid;grid-template-rows:repeat(4,1fr);gap:7px}
+  .row{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+  .tile{width:52px;height:52px;display:grid;place-items:center;font-weight:800;font-size:1.35rem;text-transform:uppercase}
+  .score{border-collapse:collapse;font-variant-numeric:tabular-nums}
+  .score th,.score td{padding:6px 12px;text-align:center;font-size:.8rem}
+  .cta{border:none;cursor:pointer;font-weight:800}
+
+  /* ---------- 1 · CLUBHOUSE CLASSIC ---------- */
+  .m1{background:#f6f1e2;color:#2c2a22;font-family:Georgia,"Times New Roman",serif}
+  .m1 .crest{font-size:.72rem;letter-spacing:.34em;text-transform:uppercase;color:#8a7440}
+  .m1 h2{margin:2px 0 0;font-size:2.3rem;font-weight:400;letter-spacing:.02em;color:#1e4d2b}
+  .m1 h2 em{font-style:italic}
+  .m1 .rule{width:220px;border-top:1px solid #b98f33;border-bottom:1px solid #b98f33;height:4px;margin-top:10px}
+  .m1 .hole{font-style:italic;color:#5a5548}
+  .m1 .tile{background:#efe7d0;border:1px solid #cbbd97;color:#3a3a30;border-radius:2px}
+  .m1 .tile.g{background:#1e4d2b;border-color:#1e4d2b;color:#f6f1e2}
+  .m1 .tile.y{background:#c9a24b;border-color:#b98f33;color:#2c2a22}
+  .m1 .score{border:1px solid #b98f33;background:#fbf7ec}
+  .m1 .score th{background:#1e4d2b;color:#f6f1e2;font-weight:400;letter-spacing:.12em;text-transform:uppercase;font-size:.68rem}
+  .m1 .score td{border-top:1px solid #e0d5b6;color:#3a3a30}
+  .m1 .score td.now{color:#1e4d2b;font-weight:700}
+  .m1 .verdict{font-style:italic;font-size:1.15rem;color:#8a7440}
+  .m1 .cta{background:#1e4d2b;color:#f6f1e2;font-family:inherit;font-weight:400;letter-spacing:.14em;text-transform:uppercase;font-size:.78rem;padding:13px 30px;border-radius:2px}
+
+  /* ---------- 2 · GLOW GOLF ---------- */
+  .m2{background:radial-gradient(ellipse at 50% 0%,#1d0f33 0%,#0e0618 70%);color:#eae6ff;font-family:"Arial Rounded MT Bold",ui-rounded,"Trebuchet MS",sans-serif}
+  .m2 h2{margin:0;font-size:2.5rem;letter-spacing:.06em;text-transform:uppercase;color:#ff3ea5;text-shadow:0 0 18px rgba(255,62,165,.85),0 0 46px rgba(255,62,165,.4)}
+  .m2 .sub{color:#2ee6ff;text-shadow:0 0 12px rgba(46,230,255,.8);letter-spacing:.28em;text-transform:uppercase;font-size:.72rem}
+  .m2 .hole{color:#b9a8ff;font-size:.9rem;letter-spacing:.1em;text-transform:uppercase}
+  .m2 .tile{background:#180b2b;border:2px solid #4a2d8a;border-radius:8px;color:#cfc4ff}
+  .m2 .tile.g{border-color:#39ff6e;color:#39ff6e;box-shadow:0 0 12px rgba(57,255,110,.55),inset 0 0 10px rgba(57,255,110,.25)}
+  .m2 .tile.y{border-color:#ffe14a;color:#ffe14a;box-shadow:0 0 12px rgba(255,225,74,.45),inset 0 0 10px rgba(255,225,74,.2)}
+  .m2 .tile.x{opacity:.38}
+  .m2 .score{border:1px solid #4a2d8a;border-radius:10px;overflow:hidden}
+  .m2 .score th{background:#241243;color:#2ee6ff;letter-spacing:.14em;font-size:.66rem;text-transform:uppercase}
+  .m2 .score td{border-top:1px solid #33205e;color:#cfc4ff}
+  .m2 .score td.now{color:#39ff6e;text-shadow:0 0 8px rgba(57,255,110,.7);font-weight:800}
+  .m2 .verdict{color:#39ff6e;text-shadow:0 0 14px rgba(57,255,110,.8);font-size:1.3rem;letter-spacing:.12em;text-transform:uppercase}
+  .m2 .cta{background:transparent;color:#ff3ea5;border:2px solid #ff3ea5;border-radius:999px;padding:12px 30px;letter-spacing:.14em;text-transform:uppercase;font-size:.8rem;box-shadow:0 0 16px rgba(255,62,165,.45),inset 0 0 10px rgba(255,62,165,.15)}
+
+  /* ---------- 3 · WINDMILL LANE ---------- */
+  .m3{background:linear-gradient(#aee3f5 0 58%,#58b94c 58% 100%);color:#23421c;font-family:ui-rounded,"Arial Rounded MT Bold","Trebuchet MS",sans-serif;position:relative}
+  .m3 .cloud{position:absolute;background:#fff;border-radius:999px;opacity:.9}
+  .m3 h2{margin:0;font-size:2.4rem;color:#fff;-webkit-text-stroke:2px #2b6e23;text-shadow:0 4px 0 #2b6e23;letter-spacing:.02em}
+  .m3 .sub{background:#e2574c;color:#fff;border-radius:999px;padding:5px 16px;font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 3px 0 #a33830}
+  .m3 .hole{background:#fff;border-radius:999px;padding:6px 18px;font-weight:800;color:#2b6e23;box-shadow:0 3px 0 rgba(0,0,0,.12)}
+  .m3 .tile{background:#fff;border-radius:12px;color:#4a5245;box-shadow:0 4px 0 rgba(0,0,0,.14)}
+  .m3 .tile.g{background:#3fae35;color:#fff;box-shadow:0 4px 0 #2b6e23}
+  .m3 .tile.y{background:#ffc93c;color:#6b4c00;box-shadow:0 4px 0 #cc9400}
+  .m3 .score{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 5px 0 rgba(0,0,0,.14)}
+  .m3 .score th{background:#e2574c;color:#fff;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase}
+  .m3 .score td{color:#4a5245;border-top:2px dashed #e8e3d2}
+  .m3 .score td.now{color:#3fae35;font-weight:800}
+  .m3 .verdict{background:#fff;border-radius:999px;padding:8px 22px;font-weight:800;color:#e2574c;font-size:1.1rem;box-shadow:0 4px 0 rgba(0,0,0,.14)}
+  .m3 .cta{background:#e2574c;color:#fff;border-radius:999px;padding:14px 32px;font-size:1rem;box-shadow:0 5px 0 #a33830}
+
+  /* ---------- 4 · TURF & CONCRETE ---------- */
+  .m4{background:#d9d9d3;color:#141412;font-family:"Arial Black","Helvetica Neue",Arial,sans-serif}
+  .m4 h2{margin:0;font-size:2.9rem;letter-spacing:-.03em;text-transform:uppercase;line-height:.92}
+  .m4 h2 .hit{background:#b9f73e;padding:0 8px}
+  .m4 .sub{font-family:"Courier New",monospace;font-weight:700;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:#3c3c36}
+  .m4 .hole{background:#141412;color:#b9f73e;padding:7px 16px;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;transform:rotate(-1.5deg)}
+  .m4 .tile{background:#fff;border:3px solid #141412;color:#141412;box-shadow:4px 4px 0 #141412}
+  .m4 .tile.g{background:#b9f73e}
+  .m4 .tile.y{background:#ff5c1f;color:#fff}
+  .m4 .tile.x{background:#bdbdb4;box-shadow:none;border-color:#8b8b82;color:#5c5c54}
+  .m4 .score{border:3px solid #141412;background:#fff;box-shadow:6px 6px 0 #141412}
+  .m4 .score th{background:#141412;color:#fff;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase}
+  .m4 .score td{border-top:2px solid #141412;font-weight:700}
+  .m4 .score td.now{background:#b9f73e}
+  .m4 .verdict{background:#ff5c1f;color:#fff;padding:6px 18px;transform:rotate(1.2deg);letter-spacing:.06em;text-transform:uppercase;font-size:1.1rem}
+  .m4 .cta{background:#141412;color:#b9f73e;padding:15px 34px;letter-spacing:.1em;text-transform:uppercase;font-size:.9rem;box-shadow:5px 5px 0 #ff5c1f}
+
+  /* ---------- 5 · FAIRWAY '78 ---------- */
+  .m5{background:#f2e5c4;color:#4a2e1e;font-family:"Cooper Black","Arial Rounded MT Bold",ui-rounded,Georgia,serif}
+  .m5 .stripes{width:100%;max-width:420px;height:14px;border-radius:999px;overflow:hidden;background:linear-gradient(90deg,#d4692b 0 25%,#dba82e 25% 50%,#7a8450 50% 75%,#4a2e1e 75% 100%)}
+  .m5 h2{margin:0;font-size:2.6rem;color:#d4692b;text-shadow:3px 3px 0 #4a2e1e;letter-spacing:.01em}
+  .m5 .sub{font-size:.78rem;letter-spacing:.3em;text-transform:uppercase;color:#7a8450;font-family:"Trebuchet MS",sans-serif;font-weight:700}
+  .m5 .hole{color:#4a2e1e;font-size:1rem}
+  .m5 .tile{background:#e9d9ac;border:2px solid #c9b070;border-radius:14px;color:#6b5636}
+  .m5 .tile.g{background:#7a8450;border-color:#5c6539;color:#f2e5c4}
+  .m5 .tile.y{background:#dba82e;border-color:#b6871c;color:#4a2e1e}
+  .m5 .score{background:#e9d9ac;border:2px solid #4a2e1e;border-radius:16px;overflow:hidden}
+  .m5 .score th{background:#4a2e1e;color:#f2e5c4;font-family:"Trebuchet MS",sans-serif;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase}
+  .m5 .score td{border-top:1px solid #c9b070}
+  .m5 .score td.now{color:#d4692b;font-weight:800}
+  .m5 .verdict{color:#d4692b;font-size:1.3rem}
+  .m5 .cta{background:#d4692b;color:#f2e5c4;border-radius:999px;padding:14px 32px;font-family:inherit;font-size:.95rem;box-shadow:0 4px 0 #4a2e1e}
+
+  @media (max-width:520px){ .tile{width:44px;height:44px;font-size:1.15rem} }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Wordle Golf — 5 design directions</h1>
+    <p>Same game on every tab: 5 holes, each hole is a Wordle, your guess count is your stroke count. Lowest total wins. Shown mid-round: Hole 3, solved in 3 (one under par — birdie).</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Design directions">
+    <button role="tab" aria-selected="true" aria-controls="p1" id="t1">1 · Clubhouse Classic</button>
+    <button role="tab" aria-selected="false" aria-controls="p2" id="t2">2 · Glow Golf</button>
+    <button role="tab" aria-selected="false" aria-controls="p3" id="t3">3 · Windmill Lane</button>
+    <button role="tab" aria-selected="false" aria-controls="p4" id="t4">4 · Turf &amp; Concrete</button>
+    <button role="tab" aria-selected="false" aria-controls="p5" id="t5">5 · Fairway ’78</button>
+  </div>
+
+  <!-- 1 -->
+  <section class="panel active" id="p1" role="tabpanel" aria-labelledby="t1">
+    <p class="brief"><strong>Clubhouse Classic.</strong> A vintage country-club scorecard: paper, engraved green, pencil-and-gold. The joke is playing something this silly in something this stuffy — kids get to feel like members of a very serious club.</p>
+    <div class="stage"><div class="mock m1">
+      <div style="text-align:center">
+        <div class="crest">Est. 2026 · Members Only</div>
+        <h2>The <em>Wordle</em> Golf Club</h2>
+        <div class="rule" style="margin-inline:auto"></div>
+      </div>
+      <div class="hole">Hole № 3 — “The Long Vowel” — Par 4</div>
+      <div class="grid">
+        <div class="row"><div class="tile x">s</div><div class="tile x">w</div><div class="tile x">i</div><div class="tile y">n</div><div class="tile y">g</div></div>
+        <div class="row"><div class="tile y">e</div><div class="tile y">n</div><div class="tile x">t</div><div class="tile g">e</div><div class="tile y">r</div></div>
+        <div class="row"><div class="tile g">g</div><div class="tile g">r</div><div class="tile g">e</div><div class="tile g">e</div><div class="tile g">n</div></div>
+        <div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+      </div>
+      <div class="verdict">A birdie. Splendid form.</div>
+      <table class="score">
+        <tr><th>Hole</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>Total</th></tr>
+        <tr><td>Par</td><td>4</td><td>4</td><td>4</td><td>5</td><td>4</td><td>21</td></tr>
+        <tr><td>Strokes</td><td>4</td><td>5</td><td class="now">3</td><td>–</td><td>–</td><td>12</td></tr>
+      </table>
+      <button class="cta">Proceed to Hole 4</button>
+    </div></div>
+  </section>
+
+  <!-- 2 -->
+  <section class="panel" id="p2" role="tabpanel" aria-labelledby="t2">
+    <p class="brief"><strong>Glow Golf.</strong> Blacklight mini golf at the mall: UV purple dark, neon letters that actually glow. Correct letters light up like a sunk putt. The most “12-year-old birthday party” of the five.</p>
+    <div class="stage"><div class="mock m2">
+      <div style="text-align:center">
+        <h2>Wordle Golf</h2>
+        <div class="sub">· Cosmic Course ·</div>
+      </div>
+      <div class="hole">Hole 3 of 5 ▸ Par 4</div>
+      <div class="grid">
+        <div class="row"><div class="tile x">s</div><div class="tile x">w</div><div class="tile x">i</div><div class="tile y">n</div><div class="tile y">g</div></div>
+        <div class="row"><div class="tile y">e</div><div class="tile y">n</div><div class="tile x">t</div><div class="tile g">e</div><div class="tile y">r</div></div>
+        <div class="row"><div class="tile g">g</div><div class="tile g">r</div><div class="tile g">e</div><div class="tile g">e</div><div class="tile g">n</div></div>
+        <div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+      </div>
+      <div class="verdict">Birdie!</div>
+      <table class="score">
+        <tr><th>Hole</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>Tot</th></tr>
+        <tr><td>Par</td><td>4</td><td>4</td><td>4</td><td>5</td><td>4</td><td>21</td></tr>
+        <tr><td>You</td><td>4</td><td>5</td><td class="now">3</td><td>–</td><td>–</td><td>12</td></tr>
+      </table>
+      <button class="cta">Next hole ▸</button>
+    </div></div>
+  </section>
+
+  <!-- 3 -->
+  <section class="panel" id="p3" role="tabpanel" aria-labelledby="t3">
+    <p class="brief"><strong>Windmill Lane.</strong> The classic outdoor course as a cartoon: sky, turf, red windmill trim, chunky white tiles that press down like putt-putt obstacles. Friendliest of the five; skews slightly younger.</p>
+    <div class="stage"><div class="mock m3">
+      <div class="cloud" style="width:110px;height:34px;top:36px;left:12%"></div>
+      <div class="cloud" style="width:80px;height:26px;top:70px;right:14%"></div>
+      <div style="text-align:center;margin-top:6px">
+        <h2>WORDLE GOLF</h2>
+      </div>
+      <div class="sub">⛳ Windmill Lane Course</div>
+      <div class="hole">Hole 3 · Par 4</div>
+      <div class="grid">
+        <div class="row"><div class="tile x">s</div><div class="tile x">w</div><div class="tile x">i</div><div class="tile y">n</div><div class="tile y">g</div></div>
+        <div class="row"><div class="tile y">e</div><div class="tile y">n</div><div class="tile x">t</div><div class="tile g">e</div><div class="tile y">r</div></div>
+        <div class="row"><div class="tile g">g</div><div class="tile g">r</div><div class="tile g">e</div><div class="tile g">e</div><div class="tile g">n</div></div>
+        <div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+      </div>
+      <div class="verdict">🐦 Birdie! One under par!</div>
+      <table class="score">
+        <tr><th>Hole</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>Total</th></tr>
+        <tr><td>Par</td><td>4</td><td>4</td><td>4</td><td>5</td><td>4</td><td>21</td></tr>
+        <tr><td>You</td><td>4</td><td>5</td><td class="now">3</td><td>–</td><td>–</td><td>12</td></tr>
+      </table>
+      <button class="cta">Next hole! →</button>
+    </div></div>
+  </section>
+
+  <!-- 4 -->
+  <section class="panel" id="p4" role="tabpanel" aria-labelledby="t4">
+    <p class="brief"><strong>Turf &amp; Concrete.</strong> Street-tournament energy: concrete grey, astroturf lime, safety orange, hard shadows, sticker tilt. Reads more skate video than golf club — for kids who’d roll their eyes at anything cute.</p>
+    <div class="stage"><div class="mock m4">
+      <div style="text-align:center">
+        <h2>WORDLE<br><span class="hit">GOLF</span></h2>
+        <div class="sub">// 5 holes · lowest strokes wins</div>
+      </div>
+      <div class="hole">Hole 03 — Par 4</div>
+      <div class="grid">
+        <div class="row"><div class="tile x">s</div><div class="tile x">w</div><div class="tile x">i</div><div class="tile y">n</div><div class="tile y">g</div></div>
+        <div class="row"><div class="tile y">e</div><div class="tile y">n</div><div class="tile x">t</div><div class="tile g">e</div><div class="tile y">r</div></div>
+        <div class="row"><div class="tile g">g</div><div class="tile g">r</div><div class="tile g">e</div><div class="tile g">e</div><div class="tile g">n</div></div>
+        <div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+      </div>
+      <div class="verdict">Birdie. −1</div>
+      <table class="score">
+        <tr><th>Hole</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>Σ</th></tr>
+        <tr><td>Par</td><td>4</td><td>4</td><td>4</td><td>5</td><td>4</td><td>21</td></tr>
+        <tr><td>You</td><td>4</td><td>5</td><td class="now">3</td><td>–</td><td>–</td><td>12</td></tr>
+      </table>
+      <button class="cta">Next hole →</button>
+    </div></div>
+  </section>
+
+  <!-- 5 -->
+  <section class="panel" id="p5" role="tabpanel" aria-labelledby="t5">
+    <p class="brief"><strong>Fairway ’78.</strong> Retro roadside mini golf: sun-faded oranges, avocado green, cream, racing stripes and fat friendly type. Feels like a vintage pennant your kids would actually pin on a wall.</p>
+    <div class="stage"><div class="mock m5">
+      <div class="stripes"></div>
+      <div style="text-align:center">
+        <h2>Wordle Golf</h2>
+        <div class="sub">Fairway ’78 · All Play Welcome</div>
+      </div>
+      <div class="hole">Hole 3 ● Par 4</div>
+      <div class="grid">
+        <div class="row"><div class="tile x">s</div><div class="tile x">w</div><div class="tile x">i</div><div class="tile y">n</div><div class="tile y">g</div></div>
+        <div class="row"><div class="tile y">e</div><div class="tile y">n</div><div class="tile x">t</div><div class="tile g">e</div><div class="tile y">r</div></div>
+        <div class="row"><div class="tile g">g</div><div class="tile g">r</div><div class="tile g">e</div><div class="tile g">e</div><div class="tile g">n</div></div>
+        <div class="row"><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div></div>
+      </div>
+      <div class="verdict">Birdie, baby!</div>
+      <table class="score">
+        <tr><th>Hole</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>Total</th></tr>
+        <tr><td>Par</td><td>4</td><td>4</td><td>4</td><td>5</td><td>4</td><td>21</td></tr>
+        <tr><td>You</td><td>4</td><td>5</td><td class="now">3</td><td>–</td><td>–</td><td>12</td></tr>
+      </table>
+      <button class="cta">Next hole</button>
+      <div class="stripes"></div>
+    </div></div>
+  </section>
+</div>
+
+<script>
+  const tabs=[...document.querySelectorAll('[role=tab]')];
+  const panels=[...document.querySelectorAll('[role=tabpanel]')];
+  function select(i){
+    tabs.forEach((t,j)=>t.setAttribute('aria-selected',j===i));
+    panels.forEach((p,j)=>p.classList.toggle('active',j===i));
+  }
+  tabs.forEach((t,i)=>{
+    t.addEventListener('click',()=>select(i));
+    t.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight'){select((i+1)%tabs.length);tabs[(i+1)%tabs.length].focus()}
+      if(e.key==='ArrowLeft'){select((i+4)%tabs.length);tabs[(i+4)%tabs.length].focus()}
+    });
+  });
+</script>
