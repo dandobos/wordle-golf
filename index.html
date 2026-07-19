@@ -326,7 +326,8 @@ const ACC={
     <polygon points="${x},${t} ${x+14},${t-7} ${x+14},${t+7}" fill="#e2574c" stroke="${OUT}" stroke-width="2.4" stroke-linejoin="round"/>`},
   scarf:(b,c,c2)=>`<rect x="38" y="96" width="44" height="11" rx="5" fill="#e2574c" stroke="${OUT}" stroke-width="2.6"/>
     <rect x="70" y="102" width="10" height="14" rx="4" fill="#e2574c" stroke="${OUT}" stroke-width="2.4"/>`,
-  facepatch:(b)=>{const[x,y,r]=HEAD[b];return`<ellipse cx="${x}" cy="${y+2}" rx="${r*.8}" ry="${r*.72}" fill="#fdfcf7"/>`},
+  facepatch:(b)=>{const p={tall:[60,50,16,14],round:[60,78,21,17],box:[60,72,19,15],cloud:[60,84,18,14]}[b]||[60,74,18,14];
+    return`<ellipse cx="${p[0]}" cy="${p[1]}" rx="${p[2]}" ry="${p[3]}" fill="#fdfcf7"/>`},
   rays:(b,c)=>{let s='';for(let i=0;i<8;i++){const a=i*Math.PI/4;
     s+=`<line x1="${(60+42*Math.cos(a)).toFixed(1)}" y1="${(82+42*Math.sin(a)).toFixed(1)}" x2="${(60+52*Math.cos(a)).toFixed(1)}" y2="${(82+52*Math.sin(a)).toFixed(1)}" stroke="${c}" stroke-width="5" stroke-linecap="round"/>`;}
     return s},
@@ -465,7 +466,147 @@ const BANK=[
    {n:"King Ribbit",b:"round",c:"#3fae35",c2:"#8fd77a",a:["crown"]},
    {n:"Herald",b:"bird",c:"#e2574c",c2:"#f08a80",a:["bowtie"]},
    {n:"Gemma",b:"star",c:"#f7a1c4"}],
-  hints:["A king wears one on his head!","It starts with a C!","It rhymes with 'brown'!"]}
+  hints:["A king wears one on his head!","It starts with a C!","It rhymes with 'brown'!"]},
+ {w:"house",par:3,chars:[
+   {n:"Bricky",b:"box",c:"#e2574c",c2:"#f8d7c2"},
+   {n:"Roofus",b:"tall",c:"#a9743f",c2:"#d9b98c",a:["earsRound"]},
+   {n:"Casa",b:"round",c:"#9db0b5",c2:"#d7e6ec",a:["earsPointy"]}],
+  hints:["You live inside one, with a roof and a door!","It starts with an H!","It rhymes with 'mouse'!"]},
+ {w:"smile",par:3,chars:[
+   {n:"Grinny",b:"round",c:"#ffc93c",c2:"#fff3c9"},
+   {n:"Happy",b:"round",c:"#f7a1c4",c2:"#fdd7e6"},
+   {n:"Giggles",b:"star",c:"#ffc93c"}],
+  hints:["Your face does it when you're happy!","It starts with an S!","It rhymes with 'mile'!"]},
+ {w:"heart",par:3,chars:[
+   {n:"Lovey",b:"round",c:"#e2574c",c2:"#f7a1c4"},
+   {n:"Cupid",b:"bird",c:"#f7a1c4",c2:"#fdd7e6",a:["bowtie"]},
+   {n:"Val",b:"round",c:"#f7a1c4",c2:"#fdd7e6",a:["flower"]}],
+  hints:["It beats inside your chest!","It starts with an H!","It rhymes with 'start'!"]},
+ {w:"horse",par:3,chars:[
+   {n:"Neigh",b:"tall",c:"#a9743f",c2:"#d9b98c",a:["earsPointy"]},
+   {n:"Clop",b:"tall",c:"#9db0b5",c2:"#d7e6ec",a:["earsPointy"]},
+   {n:"Hayley",b:"box",c:"#ffc93c",c2:"#ffe9a8"}],
+  hints:["Giddy up! You can ride it!","It starts with an H!","It rhymes with 'course'!"]},
+ {w:"party",par:3,chars:[
+   {n:"Poppy",b:"round",c:"#f7a1c4",c2:"#fdd7e6",a:["partyhat"]},
+   {n:"Balloona",b:"round",c:"#e2574c",c2:"#f08a80"},
+   {n:"Fetti",b:"star",c:"#45c4b0"}],
+  hints:["Balloons, cake, music and games!","It starts with a P!","It rhymes with 'smarty'!"]},
+ {w:"mouse",par:3,chars:[
+   {n:"Squeaks",b:"round",c:"#9db0b5",c2:"#f7a1c4",a:["earsRound"]},
+   {n:"Nibbles",b:"round",c:"#fdfcf7",c2:"#f7a1c4",a:["earsRound"]},
+   {n:"Cheddar",b:"box",c:"#ffc93c",c2:"#ffe9a8"}],
+  hints:["A tiny squeaky animal that loves cheese!","It starts with an M!","It rhymes with 'house'!"]},
+ {w:"water",par:3,chars:[
+   {n:"Splash",b:"round",c:"#7ac3e8",c2:"#d7f0fb"},
+   {n:"Drippy",b:"ghost",c:"#7ac3e8"},
+   {n:"Bubbles",b:"fish",c:"#45c4b0",c2:"#2f9c8a"}],
+  hints:["You drink it, swim in it and splash it!","It starts with a W!","Fish live in it and rain is made of it!"]},
+ {w:"plane",par:3,chars:[
+   {n:"Jetty",b:"bird",c:"#fdfcf7",c2:"#7ac3e8"},
+   {n:"Captain Goose",b:"bird",c:"#9db0b5",c2:"#d7e6ec",a:["bowtie"]},
+   {n:"Skyla",b:"cloud",c:"#f4f4f0"}],
+  hints:["It flies you away on holiday!","It starts with a P!","It rhymes with 'train'!"]},
+ {w:"apple",par:4,chars:[
+   {n:"Pippin",b:"round",c:"#e2574c",c2:"#f08a80",a:["leaf"]},
+   {n:"Wormsly",b:"snake",c:"#8fd77a",c2:"#c8eebb"},
+   {n:"Granny Smith",b:"round",c:"#3fae35",c2:"#8fd77a",a:["leaf"]}],
+  hints:["A crunchy fruit, red or green!","It starts with an A!","It has a double P!"]},
+ {w:"bread",par:4,chars:[
+   {n:"Baker Pierre",b:"tall",c:"#9db0b5",c2:"#f7a1c4",a:["earsRound","chefhat"]},
+   {n:"Crusty",b:"box",c:"#d9b98c",c2:"#f2e5c4"},
+   {n:"Butters",b:"box",c:"#ffc93c",c2:"#fff3c9"}],
+  hints:["The baker bakes it fresh every morning!","It starts with a B!","You toast slices of it!"]},
+ {w:"cloud",par:4,chars:[
+   {n:"Fluffy",b:"cloud",c:"#fdfcf7"},
+   {n:"Nimbo",b:"cloud",c:"#c3ccd4"},
+   {n:"Skye",b:"bird",c:"#7ac3e8",c2:"#d7f0fb"}],
+  hints:["It floats in the sky and sometimes rains!","It starts with a C!","It rhymes with 'loud'!"]},
+ {w:"sheep",par:4,chars:[
+   {n:"Baabara",b:"cloud",c:"#fdfcf7",a:["earsRound"]},
+   {n:"Woolly",b:"cloud",c:"#e8e4d8",a:["earsRound"]},
+   {n:"Shep",b:"tall",c:"#a9743f",c2:"#d9b98c",a:["earsRound"]}],
+  hints:["It says BAA and gives us wool!","It starts with an S!","It has a double E!"]},
+ {w:"money",par:4,chars:[
+   {n:"Penny",b:"round",c:"#ffc93c",c2:"#ffe9a8"},
+   {n:"Piggy",b:"round",c:"#f7a1c4",c2:"#fdd7e6",a:["earsRound"]},
+   {n:"Bandit",b:"round",c:"#9db0b5",c2:"#d7e6ec",a:["earsPointy"]}],
+  hints:["You save it up in a piggy bank!","It starts with an M!","It rhymes with 'honey'!"]},
+ {w:"night",par:4,chars:[
+   {n:"Hoot",b:"bird",c:"#a9743f",c2:"#d9b98c"},
+   {n:"Moonbeam",b:"round",c:"#e8e4d8",c2:"#f7f4ec"},
+   {n:"Twinkles",b:"star",c:"#ffc93c"}],
+  hints:["When the sun goes down and the stars come out!","It starts with an N!","It has a sneaky silent GH!"]},
+ {w:"river",par:4,chars:[
+   {n:"Finley",b:"fish",c:"#45c4b0",c2:"#2f9c8a"},
+   {n:"Paddles",b:"bird",c:"#ffc93c",c2:"#f28c28"},
+   {n:"Ribbit",b:"round",c:"#3fae35",c2:"#8fd77a"}],
+  hints:["Water that flows all the way to the sea!","It starts with an R!","It rhymes with 'shiver'!"]},
+ {w:"chess",par:4,chars:[
+   {n:"Sir Trots",b:"tall",c:"#9db0b5",c2:"#d7e6ec",a:["earsPointy"]},
+   {n:"Kingston",b:"round",c:"#9b6bd4",c2:"#d3bcf0",a:["crown"]},
+   {n:"Pawnie",b:"round",c:"#fdfcf7",c2:"#e8e4d8"}],
+  hints:["A board game with kings, queens and knights!","It starts with a C!","It has a double S!"]},
+ {w:"clown",par:4,chars:[
+   {n:"Bonko",b:"round",c:"#fdfcf7",c2:"#e2574c",a:["partyhat"]},
+   {n:"Honks",b:"round",c:"#e2574c",c2:"#ffc93c"},
+   {n:"Jester",b:"star",c:"#9b6bd4"}],
+  hints:["Big shoes, red nose, very very silly!","It starts with a C!","It rhymes with 'frown', but it's much happier!"]},
+ {w:"slime",par:4,chars:[
+   {n:"Gloop",b:"round",c:"#8fd77a",c2:"#c8eebb"},
+   {n:"Oozy",b:"ghost",c:"#8fd77a"},
+   {n:"Splat",b:"round",c:"#9b6bd4",c2:"#d3bcf0"}],
+  hints:["Gooey, squishy and a little bit gross!","It starts with an S!","It rhymes with 'lime'!"]},
+ {w:"witch",par:4,chars:[
+   {n:"Hazel",b:"tall",c:"#9b6bd4",c2:"#d3bcf0",a:["partyhat"]},
+   {n:"Midnight",b:"round",c:"#4a4a58",c2:"#6e6e80",a:["earsPointy","facepatch"]},
+   {n:"Warts",b:"round",c:"#3fae35",c2:"#8fd77a"}],
+  hints:["She flies a broomstick and stirs a bubbling pot!","It starts with a W!","It rhymes with 'switch'!"]},
+ {w:"toast",par:4,chars:[
+   {n:"Crispy",b:"box",c:"#d9b98c",c2:"#a9743f"},
+   {n:"Yolko",b:"round",c:"#fdfcf7",c2:"#ffc93c"},
+   {n:"Jammy",b:"round",c:"#e2574c",c2:"#f08a80"}],
+  hints:["Crunchy breakfast bread, lovely with jam!","It starts with a T!","It rhymes with 'ghost'!"]},
+ {w:"truck",par:4,chars:[
+   {n:"Rumbles",b:"box",c:"#e2574c",c2:"#d7e6ec"},
+   {n:"Beep",b:"box",c:"#ffc93c",c2:"#fff3c9"},
+   {n:"Coney",b:"tall",c:"#f28c28",c2:"#ffd9ae"}],
+  hints:["A big strong vehicle that carries heavy loads!","It starts with a T!","It rhymes with 'duck'!"]},
+ {w:"bunny",par:5,chars:[
+   {n:"Flopsy",b:"tall",c:"#fdfcf7",c2:"#f7a1c4",a:["earsLong"]},
+   {n:"Hop",b:"round",c:"#9db0b5",c2:"#d7e6ec",a:["earsLong"]},
+   {n:"Carrots",b:"tall",c:"#f28c28",c2:"#ffd9ae",a:["leaf"]}],
+  hints:["A hoppy pet with long floppy ears!","It starts with a B!","It has a double N!"]},
+ {w:"quack",par:5,chars:[
+   {n:"Puddleduck",b:"bird",c:"#ffc93c",c2:"#f28c28"},
+   {n:"Bill",b:"bird",c:"#fdfcf7",c2:"#c3ccd4"},
+   {n:"Ducky",b:"round",c:"#ffc93c",c2:"#fff3c9"}],
+  hints:["The sound a duck makes!","It starts with a Q!","It rhymes with 'snack'!"]},
+ {w:"jelly",par:5,chars:[
+   {n:"Wobbles",b:"round",c:"#e2574c",c2:"#f08a80"},
+   {n:"Jiggly",b:"ghost",c:"#f7a1c4"},
+   {n:"Beanie",b:"round",c:"#3fae35",c2:"#8fd77a"}],
+  hints:["It wobbles on your plate at birthday parties!","It starts with a J!","It has a double L!"]},
+ {w:"fuzzy",par:5,chars:[
+   {n:"Fuzzball",b:"round",c:"#a9743f",c2:"#d9b98c",a:["earsRound"]},
+   {n:"Peaches",b:"round",c:"#f28c28",c2:"#ffd9ae",a:["leaf"]},
+   {n:"Lint",b:"cloud",c:"#c3ccd4"}],
+  hints:["How a peach or a teddy bear feels!","It starts with an F!","It has a double Z!"]},
+ {w:"puppy",par:5,chars:[
+   {n:"Rex",b:"tall",c:"#a9743f",c2:"#d9b98c",a:["earsRound"]},
+   {n:"Biscuit",b:"round",c:"#d9b98c",c2:"#f2e5c4",a:["earsRound"]},
+   {n:"Slobber",b:"round",c:"#9db0b5",c2:"#d7e6ec",a:["earsRound"]}],
+  hints:["A baby dog!","It starts with a P!","It has a double P!"]},
+ {w:"igloo",par:5,chars:[
+   {n:"Iggy",b:"box",c:"#fdfcf7",c2:"#d7f0fb"},
+   {n:"Pingu",b:"tall",c:"#2b3a4a",c2:"#fdfcf7",a:["facepatch"]},
+   {n:"Snowball",b:"round",c:"#fdfcf7",c2:"#e8f4fa",a:["scarf"]}],
+  hints:["A little round house built from snow blocks!","It starts with an I!","It has a double O!"]},
+ {w:"koala",par:5,chars:[
+   {n:"Kiki",b:"round",c:"#9db0b5",c2:"#d7e6ec",a:["earsRound"]},
+   {n:"Sleepy",b:"round",c:"#c3ccd4",c2:"#e8e4d8",a:["earsRound"]},
+   {n:"Euca",b:"tall",c:"#3fae35",c2:"#8fd77a",a:["leaf"]}],
+  hints:["A cuddly Australian animal that sleeps in gum trees!","It starts with a K!","It ends with an A!"]}
 ];
 
 /* ============ QUIPS ============ */
@@ -518,9 +659,27 @@ let C=null; // current turn {entry, rows, cur, done, hintsUsed, keys}
 
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
 
+/* 14-day word cooldown: a word that has been played on this device is not
+   dealt again for COOLDOWN_DAYS. If a par-pool has no rested words left
+   (very heavy play), fall back to the least-recently-played words first. */
+const COOLDOWN_DAYS=14,COOLDOWN_MS=COOLDOWN_DAYS*24*60*60*1000;
+function usageMap(){try{return JSON.parse(localStorage.getItem('wg-used'))||{}}catch(e){return{}}}
+function markUsed(w){
+  const u=usageMap();u[w]=Date.now();
+  for(const k in u)if(Date.now()-u[k]>=COOLDOWN_MS)delete u[k]; // prune rested words
+  try{localStorage.setItem('wg-used',JSON.stringify(u))}catch(e){}
+}
+function poolFor(par){
+  const u=usageMap(),now=Date.now();
+  const all=BANK.filter(e=>e.par===par);
+  const fresh=shuffle(all.filter(e=>!u[e.w]||now-u[e.w]>=COOLDOWN_MS));
+  const cooling=all.filter(e=>u[e.w]&&now-u[e.w]<COOLDOWN_MS)
+    .sort((a,b)=>u[b.w]-u[a.w]); // most recent first, so .pop() reaches oldest first
+  return cooling.concat(fresh);  // .pop() takes fresh words first, then LRU fallback
+}
 function buildCourse(players){
   const pars=shuffle([3,4,4,4,5]);
-  const pool={3:shuffle(BANK.filter(e=>e.par===3)),4:shuffle(BANK.filter(e=>e.par===4)),5:shuffle(BANK.filter(e=>e.par===5))};
+  const pool={3:poolFor(3),4:poolFor(4),5:poolFor(5)};
   const assign=pars.map(par=>players.map(()=>pool[par].pop()));
   return{players,pars,assign,results:pars.map(()=>players.map(()=>null)),hole:0,p:0};
 }
@@ -545,6 +704,7 @@ $('btn-tee').addEventListener('click',startTurn);
 /* ============ TURN ============ */
 function startTurn(){
   const entry=G.assign[G.hole][G.p];
+  markUsed(entry.w); // word is revealed to a player now: start its 14-day rest
   C={entry,rows:[],cur:"",done:false,hintsUsed:0,keys:{}};
   $('hud-hole').textContent=`Hole ${G.hole+1}/5 · Par ${entry.par}`;
   renderHud();renderGallery();renderGrid();renderKb();
