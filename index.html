@@ -669,6 +669,22 @@ function markUsed(w){
   for(const k in u)if(Date.now()-u[k]>=COOLDOWN_MS)delete u[k]; // prune rested words
   try{localStorage.setItem('wg-used',JSON.stringify(u))}catch(e){}
 }
+/* One-time seeding for games played before the cooldown existed:
+   open the game as ?used=pizza,plant,... and those words are marked as
+   played 24h ago (so they rest another 13 days). Existing records win;
+   the URL is cleaned so a reload doesn't re-seed. */
+(function seedFromURL(){
+  const q=new URLSearchParams(location.search).get('used');
+  if(!q)return;
+  const u=usageMap(),t=Date.now()-24*60*60*1000;
+  let n=0;
+  q.toLowerCase().split(',').map(w=>w.trim())
+    .filter(w=>BANK.some(e=>e.w===w))
+    .forEach(w=>{if(!u[w]){u[w]=t;n++;}});
+  try{localStorage.setItem('wg-used',JSON.stringify(u))}catch(e){}
+  history.replaceState(null,'',location.pathname);
+  if(n){const s=document.querySelector('.sub');if(s)s.textContent=`✓ ${n} word${n===1?'':'s'} marked as recently played`;}
+})();
 function poolFor(par){
   const u=usageMap(),now=Date.now();
   const all=BANK.filter(e=>e.par===par);
